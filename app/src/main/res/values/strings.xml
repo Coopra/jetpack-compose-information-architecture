@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Alex Architecture</string>
+    <string name="placeholder">Tap a word to display its definition</string>
+</resources>
