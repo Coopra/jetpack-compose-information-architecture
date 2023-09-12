@@ -21,6 +21,8 @@ class EmailNavigationLocation(
     private val windowSizeClass: WindowSizeClass,
     private val displayFeatures: List<DisplayFeature>
 ): NavigationLocation {
+    private var savedSelectedIndex = 0
+
     override val title: String
         get() = "Email"
     override val icon: Int
@@ -38,7 +40,7 @@ class EmailNavigationLocation(
         modifier: Modifier,
         onDrawerItemClick: (() -> Unit)?) {
         val emailFolders = listOf(InboxFolder(), DraftsFolder(), ArchiveFolder(), SentFolder(), DeletedFolder(), JunkFolder())
-        var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+        var selectedIndex by rememberSaveable { mutableIntStateOf(savedSelectedIndex) }
         toolbarTitle = emailFolders[selectedIndex].title
 
         emailFolders.forEachIndexed { index, emailFolder ->
@@ -46,6 +48,7 @@ class EmailNavigationLocation(
                 selected = selectedIndex == index,
                 onClick = {
                     selectedIndex = index
+                    savedSelectedIndex = selectedIndex
                     toolbarTitle = emailFolders[selectedIndex].title
                     onDrawerItemClick?.invoke()
                 },

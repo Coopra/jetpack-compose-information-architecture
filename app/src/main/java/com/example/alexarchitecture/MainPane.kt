@@ -159,12 +159,7 @@ private fun ExpandedPane(navigationLocations: List<NavigationLocation>) {
                 DismissibleDrawerSheet {
                     Spacer(Modifier.height(12.dp))
                     navigationLocations[navigationLocationIndex].DrawerContent(
-                        modifier = Modifier,
-                        onDrawerItemClick = {
-                            scope.launch {
-                                drawerState.close()
-                            }
-                        },
+                        modifier = Modifier
                     )
                 }
             }, drawerState = drawerState) {
