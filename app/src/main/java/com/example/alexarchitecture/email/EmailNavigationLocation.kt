@@ -9,6 +9,7 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -21,7 +22,8 @@ class EmailNavigationLocation(
     private val windowSizeClass: WindowSizeClass,
     private val displayFeatures: List<DisplayFeature>
 ): NavigationLocation {
-    private var savedSelectedIndex = 0
+    private val emailFolders = listOf(InboxFolder(), DraftsFolder(), ArchiveFolder(), SentFolder(), DeletedFolder(), JunkFolder())
+    private var selectedFolder by mutableStateOf(emailFolders.first())
 
     override val title: String
         get() = "Email"
@@ -32,24 +34,21 @@ class EmailNavigationLocation(
 
     @Composable
     override fun Content(modifier: Modifier) {
-        EmailPane(windowSizeClass, displayFeatures, modifier = modifier)
+        EmailPane(windowSizeClass, displayFeatures, modifier = modifier, selectedFolder = selectedFolder)
     }
 
     @Composable
     override fun DrawerContent(
         modifier: Modifier,
         onDrawerItemClick: (() -> Unit)?) {
-        val emailFolders = listOf(InboxFolder(), DraftsFolder(), ArchiveFolder(), SentFolder(), DeletedFolder(), JunkFolder())
-        var selectedIndex by rememberSaveable { mutableIntStateOf(savedSelectedIndex) }
-        toolbarTitle = emailFolders[selectedIndex].title
+        toolbarTitle = selectedFolder.title
 
-        emailFolders.forEachIndexed { index, emailFolder ->
+        emailFolders.forEach { emailFolder ->
             NavigationDrawerItem(label = { Text(text = emailFolder.title) },
-                selected = selectedIndex == index,
+                selected = selectedFolder == emailFolder,
                 onClick = {
-                    selectedIndex = index
-                    savedSelectedIndex = selectedIndex
-                    toolbarTitle = emailFolders[selectedIndex].title
+                    selectedFolder = emailFolder
+                    toolbarTitle = selectedFolder.title
                     onDrawerItemClick?.invoke()
                 },
                 icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },

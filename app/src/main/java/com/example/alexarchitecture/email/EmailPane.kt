@@ -67,7 +67,8 @@ private data class DefinedWord(
 fun EmailPane(
     windowSizeClass: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedFolder: EmailFolder = InboxFolder()
 ) {
     // Query for the current window size class
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
@@ -112,7 +113,8 @@ fun EmailPane(
                     Modifier.padding(end = 12.dp)
                 } else {
                     Modifier
-                }
+                },
+                selectedFolder = selectedFolder
             )
         },
         detail = { isListVisible ->
@@ -147,7 +149,8 @@ private fun ListContent(
     words: List<String>,
     selectionState: SelectionVisibilityState,
     onIndexClick: (index: Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedFolder: EmailFolder = InboxFolder()
 ) {
     LazyColumn(
         contentPadding = PaddingValues(vertical = 16.dp),
@@ -215,7 +218,15 @@ private fun ListContent(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = word,
+                    text = when (selectedFolder) {
+                        is InboxFolder -> "Inbox - $word"
+                        is DraftsFolder -> "Drafts - $word"
+                        is ArchiveFolder -> "Archive - $word"
+                        is SentFolder -> "Sent - $word"
+                        is DeletedFolder -> "Deleted - $word"
+                        is JunkFolder -> "Junk - $word"
+                        else -> word
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
