@@ -165,10 +165,13 @@ private fun ExpandedPane(
                 Icon(painter = painterResource(id = R.drawable.outline_edit_24), contentDescription = "Compose")
             }
 
+            Spacer(Modifier.height(24.dp))
+
             NavigationLocation.values().forEach {
-                 NavigationRailItem(selected = navigationLocation == it,
+                NavigationRailItem(selected = navigationLocation == it,
                     onClick = { navigationLocation = it },
-                    icon = { Icon(painter = painterResource(id = it.icon), contentDescription = it.title) })                }
+                    icon = { Icon(painter = painterResource(id = it.icon), contentDescription = it.title) })
+            }
         }
 
         MyDismissibleNavigationDrawer(drawerContent = {
@@ -183,8 +186,7 @@ private fun ExpandedPane(
                     )
                 }
             }
-        },
-            drawerState = drawerState) {
+        }, drawerState = drawerState) {
             when (navigationLocation) {
                 NavigationLocation.Email -> EmailPane(windowSizeClass, displayFeatures)
                 NavigationLocation.Calendar -> Text(text = "Calendar")
@@ -217,8 +219,7 @@ enum class NavigationLocation(
     val icon: Int
 ) {
     Email("Email", R.drawable.outline_email_24), Calendar("Calendar", R.drawable.outline_calendar_month_24), Feed(
-        "Feed",
-        R.drawable.outline_dynamic_feed_24
+        "Feed", R.drawable.outline_dynamic_feed_24
     ),
     Apps("Apps", R.drawable.outline_apps_24)
 }
@@ -229,8 +230,7 @@ enum class EmailFolders(
     val icon: Int
 ) {
     Inbox("Inbox", R.drawable.outline_inbox_24), Drafts("Drafts", R.drawable.outline_edit_note_24), Archive(
-        "Archive",
-        R.drawable.outline_archive_24
+        "Archive", R.drawable.outline_archive_24
     ),
     Sent("Sent", R.drawable.outline_send_24), Deleted("Deleted", R.drawable.outline_delete_24), Junk("Junk", R.drawable.outline_block_24)
 }

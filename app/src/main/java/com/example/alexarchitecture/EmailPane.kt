@@ -79,14 +79,15 @@ fun EmailPane(
      */
     var isDetailOpen by rememberSaveable { mutableStateOf(false) }
 
+    val showListAndDetail = when (widthSizeClass) {
+        WindowWidthSizeClass.Compact -> false
+        else -> true
+    }
+
     ListDetail(
         isDetailOpen = isDetailOpen,
         setIsDetailOpen = { isDetailOpen = it },
-        showListAndDetail =
-        when (widthSizeClass) {
-            WindowWidthSizeClass.Compact -> false
-            else -> true
-        },
+        showListAndDetail = showListAndDetail,
         detailKey = selectedWordIndex,
         list = { isDetailVisible ->
             val currentSelectedWordIndex = selectedWordIndex
@@ -105,7 +106,7 @@ fun EmailPane(
                     isDetailOpen = true
                 },
                 modifier = if (isDetailVisible) {
-                    Modifier.padding(end = 8.dp)
+                    Modifier.padding(end = 12.dp)
                 } else {
                     Modifier
                 }
@@ -116,7 +117,7 @@ fun EmailPane(
             DetailContent(
                 definedWord = definedWord,
                 modifier = if (isListVisible) {
-                    Modifier.padding(start = 8.dp)
+                    Modifier.padding(start = 12.dp)
                 } else {
                     Modifier
                 }
@@ -126,7 +127,12 @@ fun EmailPane(
             splitFraction = 1f / 3f,
         ),
         displayFeatures = displayFeatures,
-        modifier = modifier.padding(horizontal = 16.dp)
+        modifier = modifier.padding(
+            horizontal = when(showListAndDetail) {
+                true -> 24.dp
+                false -> 16.dp
+            }
+        )
     )
 }
 
