@@ -1,4 +1,4 @@
-package com.example.alexarchitecture
+package com.example.alexarchitecture.email
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -35,6 +35,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.window.layout.DisplayFeature
+import com.example.alexarchitecture.DeviceSizePreviews
+import com.example.alexarchitecture.ListDetail
+import com.example.alexarchitecture.R
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 
