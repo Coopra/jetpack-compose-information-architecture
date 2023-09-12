@@ -11,6 +11,8 @@ class CalendarNavigationLocation: NavigationLocation {
         get() = "Calendar"
     override val icon: Int
         get() = R.drawable.outline_calendar_month_24
+    override var toolbarTitle: String = title
+    override val hasDrawerContent: Boolean = false
 
     @Composable
     override fun Content(modifier: Modifier) {

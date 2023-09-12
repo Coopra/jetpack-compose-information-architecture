@@ -11,6 +11,8 @@ class FeedNavigationLocation: NavigationLocation {
         get() = "Feed"
     override val icon: Int
         get() = R.drawable.outline_dynamic_feed_24
+    override var toolbarTitle: String = title
+    override val hasDrawerContent: Boolean = false
 
     @Composable
     override fun Content(modifier: Modifier) {

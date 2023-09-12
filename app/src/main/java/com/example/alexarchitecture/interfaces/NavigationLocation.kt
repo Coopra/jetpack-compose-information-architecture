@@ -8,7 +8,12 @@ interface NavigationLocation {
     val title: String
     @get:DrawableRes
     val icon: Int
+    val toolbarTitle: String
+    val hasDrawerContent: Boolean
 
     @Composable
     fun Content(modifier: Modifier)
+
+    @Composable
+    fun DrawerContent(modifier: Modifier, onDrawerItemClick: (() -> Unit)? = null): Unit? = null
 }

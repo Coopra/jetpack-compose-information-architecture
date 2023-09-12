@@ -1,7 +1,6 @@
 package com.example.alexarchitecture
 
 import androidx.activity.compose.BackHandler
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -22,8 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationDrawerItem
-import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Text
@@ -34,7 +31,6 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -73,9 +69,6 @@ private fun CompactPane(navigationLocations: List<NavigationLocation>) {
     var navigationLocationIndex by rememberSaveable {
         mutableIntStateOf(0)
     }
-    var selectedEmailFolder by rememberSaveable {
-        mutableStateOf(EmailFolders.Inbox)
-    }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     BackHandler(enabled = drawerState.isOpen) {
@@ -97,29 +90,28 @@ private fun CompactPane(navigationLocations: List<NavigationLocation>) {
             Icon(painter = painterResource(id = R.drawable.outline_edit_24), contentDescription = "Compose")
         }
     }, topBar = {
-        TopAppBar(title = { Text(text = selectedEmailFolder.title) }, navigationIcon = {
-            IconButton(onClick = {
-                scope.launch {
-                    drawerState.open()
+        TopAppBar(title = { Text(text = navigationLocations[navigationLocationIndex].toolbarTitle) }, navigationIcon = {
+            if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
+                IconButton(onClick = {
+                    scope.launch {
+                        drawerState.open()
+                    }
+                }) {
+                    Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
                 }
-            }) {
-                Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
             }
         })
     }, drawerContent = {
-        ModalDrawerSheet {
-            Spacer(Modifier.height(12.dp))
-            EmailFolders.values().forEach {
-                NavigationDrawerItem(label = { Text(text = it.title) },
-                    selected = selectedEmailFolder == it,
-                    onClick = {
-                        selectedEmailFolder = it
+        if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
+            ModalDrawerSheet {
+                Spacer(Modifier.height(12.dp))
+                navigationLocations[navigationLocationIndex].DrawerContent(
+                    modifier = Modifier,
+                    onDrawerItemClick = {
                         scope.launch {
                             drawerState.close()
                         }
                     },
-                    icon = { Icon(painter = painterResource(id = it.icon), contentDescription = null) },
-                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }
         }
@@ -133,21 +125,20 @@ private fun ExpandedPane(navigationLocations: List<NavigationLocation>) {
     var navigationLocationIndex by rememberSaveable {
         mutableIntStateOf(0)
     }
-    var selectedEmailFolder by rememberSaveable {
-        mutableStateOf(EmailFolders.Inbox)
-    }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     Row {
         NavigationRail {
-            IconButton(onClick = {
-                when (drawerState.currentValue) {
-                    DrawerValue.Open -> scope.launch { drawerState.close() }
-                    DrawerValue.Closed -> scope.launch { drawerState.open() }
+            AnimatedVisibility(visible = navigationLocations[navigationLocationIndex].hasDrawerContent) {
+                IconButton(onClick = {
+                    when (drawerState.currentValue) {
+                        DrawerValue.Open -> scope.launch { drawerState.close() }
+                        DrawerValue.Closed -> scope.launch { drawerState.open() }
+                    }
+                }) {
+                    Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
                 }
-            }) {
-                Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
             }
 
             FloatingActionButton(onClick = { /*TODO*/ }) {
@@ -163,19 +154,23 @@ private fun ExpandedPane(navigationLocations: List<NavigationLocation>) {
             }
         }
 
-        MyDismissibleNavigationDrawer(drawerContent = {
-            DismissibleDrawerSheet {
-                Spacer(Modifier.height(12.dp))
-                EmailFolders.values().forEach {
-                    NavigationDrawerItem(label = { Text(text = it.title) },
-                        selected = selectedEmailFolder == it,
-                        onClick = { selectedEmailFolder = it },
-                        icon = { Icon(painter = painterResource(id = it.icon), contentDescription = null) },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
+            MyDismissibleNavigationDrawer(drawerContent = {
+                DismissibleDrawerSheet {
+                    Spacer(Modifier.height(12.dp))
+                    navigationLocations[navigationLocationIndex].DrawerContent(
+                        modifier = Modifier,
+                        onDrawerItemClick = {
+                            scope.launch {
+                                drawerState.close()
+                            }
+                        },
                     )
                 }
+            }, drawerState = drawerState) {
+                navigationLocations[navigationLocationIndex].Content(modifier = Modifier)
             }
-        }, drawerState = drawerState) {
+        } else {
             navigationLocations[navigationLocationIndex].Content(modifier = Modifier)
         }
     }
@@ -200,17 +195,6 @@ fun MainPanePreview() {
 @Preview(name = "Foldable", showSystemUi = true, device = "spec:width=673dp,height=841dp")
 @Preview(name = "Tablet", showSystemUi = true, device = "spec:width=1280dp,height=800dp,dpi=240")
 annotation class DeviceSizePreviews
-
-enum class EmailFolders(
-    val title: String,
-    @DrawableRes
-    val icon: Int
-) {
-    Inbox("Inbox", R.drawable.outline_inbox_24), Drafts("Drafts", R.drawable.outline_edit_note_24), Archive(
-        "Archive", R.drawable.outline_archive_24
-    ),
-    Sent("Sent", R.drawable.outline_send_24), Deleted("Deleted", R.drawable.outline_delete_24), Junk("Junk", R.drawable.outline_block_24)
-}
 
 @Composable
 fun MyDismissibleNavigationDrawer(

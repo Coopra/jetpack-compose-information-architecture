@@ -11,6 +11,8 @@ class AppsNavigationLocation: NavigationLocation {
         get() = "Apps"
     override val icon: Int
         get() = R.drawable.outline_apps_24
+    override var toolbarTitle: String = title
+    override val hasDrawerContent: Boolean = false
 
     @Composable
     override fun Content(modifier: Modifier) {
