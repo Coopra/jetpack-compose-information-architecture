@@ -24,11 +24,8 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -55,61 +52,43 @@ fun EmailPane(
     val viewModel: EmailViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    /**
-     * True if the detail is currently open. This is the primary control for "navigation".
-     */
-    var isDetailOpen by rememberSaveable { mutableStateOf(false) }
-
     val showListAndDetail = when (widthSizeClass) {
         WindowWidthSizeClass.Compact -> false
         else -> true
     }
 
-    ListDetail(
-        isDetailOpen = isDetailOpen,
-        setIsDetailOpen = {
-            isDetailOpen = it
-            if (!it) {
-                viewModel.updateSelectedEmail(null)
-            }
-        },
-        showListAndDetail = showListAndDetail,
-        detailKey = uiState.selectedEmail,
-        list = { isDetailVisible ->
-            ListContent(
-                emails = uiState.folderEmails, selectedEmail = uiState.selectedEmail, onEmailClick = { email ->
-                    viewModel.updateSelectedEmail(email)
-                    // Consider the detail to now be open. This acts like a navigation if
-                    // there isn't room for both list and detail, and also will result
-                    // in the detail remaining open in the case of resize.
-                    isDetailOpen = true
-                }, modifier = if (isDetailVisible) {
-                    Modifier.padding(end = 12.dp)
-                } else {
-                    Modifier
-                }
-            )
-        },
-        detail = { isListVisible ->
-            DetailContent(
-                selectedEmail = uiState.selectedEmail,
-                modifier = if (isListVisible) {
-                    Modifier.padding(start = 12.dp)
-                } else {
-                    Modifier
-                }
-            )
-        },
-        twoPaneStrategy = HorizontalTwoPaneStrategy(
-            splitFraction = 1f / 3f,
-        ),
-        displayFeatures = displayFeatures,
-        modifier = modifier.padding(
-            horizontal = when(showListAndDetail) {
-                true -> 24.dp
-                false -> 16.dp
+    ListDetail(isDetailOpen = uiState.selectedEmail != null, setIsDetailOpen = {
+        if (!it) {
+            viewModel.updateSelectedEmail(null)
+        }
+    }, showListAndDetail = showListAndDetail, list = { isDetailVisible ->
+        ListContent(
+            emails = uiState.folderEmails, selectedEmail = uiState.selectedEmail,
+            onEmailClick = { email ->
+                viewModel.updateSelectedEmail(email)
+            }, modifier = if (isDetailVisible) {
+                Modifier.padding(end = 12.dp)
+            } else {
+                Modifier
             }
         )
+    }, detail = { isListVisible ->
+        DetailContent(
+            selectedEmail = uiState.selectedEmail,
+            modifier = if (isListVisible) {
+                Modifier.padding(start = 12.dp)
+            } else {
+                Modifier
+            }
+        )
+    }, twoPaneStrategy = HorizontalTwoPaneStrategy(
+        splitFraction = 1f / 3f,
+    ), displayFeatures = displayFeatures, modifier = modifier.padding(
+        horizontal = when(showListAndDetail) {
+            true -> 24.dp
+            false -> 16.dp
+        }
+    )
     )
 }
 

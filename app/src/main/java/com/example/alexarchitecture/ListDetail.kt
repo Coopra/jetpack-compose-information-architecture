@@ -9,7 +9,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.window.layout.DisplayFeature
 import com.google.accompanist.adaptive.FoldAwareConfiguration
@@ -21,10 +20,6 @@ import com.google.accompanist.adaptive.TwoPaneStrategy
  *
  * The [list] slot is the primary content, and is in a parent relationship with the content
  * displayed in [detail].
- *
- * This relationship implies that different detail screens may be swapped out for each other, and
- * should be distinguished by passing a [detailKey] to control when a different detail is being
- * shown (to reset instance state.
  *
  * When there is enough space to display both list and detail, pass `true` to [showListAndDetail]
  * to show both the list and the detail at the same time. This content is displayed in a [TwoPane]
@@ -40,7 +35,6 @@ fun ListDetail(
     isDetailOpen: Boolean,
     setIsDetailOpen: (Boolean) -> Unit,
     showListAndDetail: Boolean,
-    detailKey: Any?,
     list: @Composable (isDetailVisible: Boolean) -> Unit,
     detail: @Composable (isListVisible: Boolean) -> Unit,
     twoPaneStrategy: TwoPaneStrategy,
@@ -49,7 +43,6 @@ fun ListDetail(
 ) {
     val currentIsDetailOpen by rememberUpdatedState(isDetailOpen)
     val currentShowListAndDetail by rememberUpdatedState(showListAndDetail)
-    val currentDetailKey by rememberUpdatedState(detailKey)
 
     // Determine whether to show the list and/or the detail.
     // This is a function of current app state, and the width size class.
@@ -66,53 +59,23 @@ fun ListDetail(
     // Validity check: we should always be showing something
     check(showList || showDetail)
 
-    val listSaveableStateHolder = rememberSaveableStateHolder()
-    val detailSaveableStateHolder = rememberSaveableStateHolder()
-
     val start = remember {
         movableContentOf {
-            // Set up a SaveableStateProvider so the list state will be preserved even while it
-            // is hidden if the detail is showing instead.
-            // listSaveableStateHolder.SaveableStateProvider(0) {
-                Box(
-                    modifier = Modifier
-                        .userInteractionNotification {
-                            // When interacting with the list, consider the detail to no longer be
-                            // open in the case of resize.
-                            setIsDetailOpen(false)
-                        }
-                ) {
-                    list(showDetail)
-                }
-            // }
+            Box {
+                list(showDetail)
+            }
         }
     }
 
     val end = remember {
         movableContentOf {
-            // Set up a SaveableStateProvider against the selected word index to save detail
-            // state while switching between details.
-            // If this behavior isn't desired, this can be replaced with a key on the
-            // selectedWordIndex.
-            // detailSaveableStateHolder.SaveableStateProvider(currentDetailKey ?: "null") {
-                Box(
-                    modifier = Modifier
-                        .userInteractionNotification {
-                            // When interacting with the detail, consider the detail to be
-                            // open in the case of resize.
-                            setIsDetailOpen(true)
-                        }
-                ) {
-                    detail(showList)
-                }
-            // }
+            Box {
+                detail(showList)
+            }
 
-            // If showing just the detail, allow a back press to hide the detail to return to
-            // the list.
-            if (!showList) {
-                BackHandler {
-                    setIsDetailOpen(false)
-                }
+            // Allow a back press to hide whatever is shown in the detail pane.
+            BackHandler(currentIsDetailOpen) {
+                setIsDetailOpen(false)
             }
         }
     }
