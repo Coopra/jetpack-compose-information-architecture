@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.DrawerState
@@ -103,7 +104,7 @@ private fun CompactPane(navigationLocations: List<NavigationLocation>) {
         })
     }, drawerContent = {
         if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
-            ModalDrawerSheet {
+            ModalDrawerSheet(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.height(12.dp))
                 navigationLocations[navigationLocationIndex].DrawerContent(
                     modifier = Modifier,
