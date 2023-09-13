@@ -73,7 +73,7 @@ fun ListDetail(
         movableContentOf {
             // Set up a SaveableStateProvider so the list state will be preserved even while it
             // is hidden if the detail is showing instead.
-            listSaveableStateHolder.SaveableStateProvider(0) {
+            // listSaveableStateHolder.SaveableStateProvider(0) {
                 Box(
                     modifier = Modifier
                         .userInteractionNotification {
@@ -84,7 +84,7 @@ fun ListDetail(
                 ) {
                     list(showDetail)
                 }
-            }
+            // }
         }
     }
 
@@ -94,7 +94,7 @@ fun ListDetail(
             // state while switching between details.
             // If this behavior isn't desired, this can be replaced with a key on the
             // selectedWordIndex.
-            detailSaveableStateHolder.SaveableStateProvider(currentDetailKey ?: "null") {
+            // detailSaveableStateHolder.SaveableStateProvider(currentDetailKey ?: "null") {
                 Box(
                     modifier = Modifier
                         .userInteractionNotification {
@@ -105,7 +105,7 @@ fun ListDetail(
                 ) {
                     detail(showList)
                 }
-            }
+            // }
 
             // If showing just the detail, allow a back press to hide the detail to return to
             // the list.

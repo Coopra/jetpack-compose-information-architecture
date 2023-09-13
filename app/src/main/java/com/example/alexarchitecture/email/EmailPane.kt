@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -34,50 +34,26 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.layout.DisplayFeature
 import com.example.alexarchitecture.DeviceSizePreviews
 import com.example.alexarchitecture.ListDetail
 import com.example.alexarchitecture.R
-import com.example.alexarchitecture.interfaces.EmailFolder
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
-
-// Create some simple sample data
-private val loremIpsum = """
-        |Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Dui nunc mattis enim ut tellus elementum sagittis. Nunc sed augue lacus viverra vitae. Sit amet dictum sit amet justo donec. Fringilla urna porttitor rhoncus dolor purus non enim praesent elementum. Dictum non consectetur a erat nam at lectus urna. Tellus mauris a diam maecenas sed enim ut sem viverra. Commodo ullamcorper a lacus vestibulum sed arcu non. Lorem mollis aliquam ut porttitor leo a diam sollicitudin tempor. Pellentesque habitant morbi tristique senectus et netus et malesuada. Vitae suscipit tellus mauris a diam maecenas sed. Neque ornare aenean euismod elementum nisi quis. Quam vulputate dignissim suspendisse in est ante in nibh mauris. Tellus in metus vulputate eu scelerisque felis imperdiet proin fermentum. Orci ac auctor augue mauris augue neque gravida.
-        |
-        |Tempus quam pellentesque nec nam aliquam. Praesent semper feugiat nibh sed. Adipiscing elit duis tristique sollicitudin nibh sit. Netus et malesuada fames ac turpis egestas sed tempus urna. Quis varius quam quisque id diam vel quam. Urna duis convallis convallis tellus id interdum velit laoreet. Id eu nisl nunc mi ipsum. Fermentum dui faucibus in ornare. Nunc lobortis mattis aliquam faucibus. Vulputate mi sit amet mauris commodo quis. Porta nibh venenatis cras sed. Vitae tortor condimentum lacinia quis vel eros donec. Eu non diam phasellus vestibulum.
-        """.trimMargin()
-private val sampleWords = listOf(
-    "Apple" to loremIpsum,
-    "Banana" to loremIpsum,
-    "Cherry" to loremIpsum,
-    "Date" to loremIpsum,
-    "Elderberry" to loremIpsum,
-    "Fig" to loremIpsum,
-    "Grape" to loremIpsum,
-    "Honeydew" to loremIpsum,
-).map { (word, definition) -> DefinedWord(word, definition) }
-
-private data class DefinedWord(
-    val word: String,
-    val definition: String
-)
 
 @Composable
 fun EmailPane(
     windowSizeClass: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
-    modifier: Modifier = Modifier,
-    selectedFolder: EmailFolder = EmailFolder.Inbox
+    modifier: Modifier = Modifier
 ) {
     // Query for the current window size class
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
 
-    /**
-     * The index of the currently selected word, or `null` if none is selected
-     */
-    var selectedWordIndex: Int? by rememberSaveable { mutableStateOf(null) }
+    val viewModel: EmailViewModel = viewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     /**
      * True if the detail is currently open. This is the primary control for "navigation".
@@ -91,37 +67,32 @@ fun EmailPane(
 
     ListDetail(
         isDetailOpen = isDetailOpen,
-        setIsDetailOpen = { isDetailOpen = it },
+        setIsDetailOpen = {
+            isDetailOpen = it
+            if (!it) {
+                viewModel.updateSelectedEmail(null)
+            }
+        },
         showListAndDetail = showListAndDetail,
-        detailKey = selectedWordIndex,
+        detailKey = uiState.selectedEmail,
         list = { isDetailVisible ->
-            val currentSelectedWordIndex = selectedWordIndex
             ListContent(
-                words = sampleWords.map(DefinedWord::word),
-                selectionState = if (isDetailVisible && currentSelectedWordIndex != null) {
-                    SelectionVisibilityState.ShowSelection(currentSelectedWordIndex)
-                } else {
-                    SelectionVisibilityState.NoSelection
-                },
-                onIndexClick = { index ->
-                    selectedWordIndex = index
+                emails = uiState.folderEmails, selectedEmail = uiState.selectedEmail, onEmailClick = { email ->
+                    viewModel.updateSelectedEmail(email)
                     // Consider the detail to now be open. This acts like a navigation if
                     // there isn't room for both list and detail, and also will result
                     // in the detail remaining open in the case of resize.
                     isDetailOpen = true
-                },
-                modifier = if (isDetailVisible) {
+                }, modifier = if (isDetailVisible) {
                     Modifier.padding(end = 12.dp)
                 } else {
                     Modifier
-                },
-                selectedFolder = selectedFolder
+                }
             )
         },
         detail = { isListVisible ->
-            val definedWord = selectedWordIndex?.let(sampleWords::get)
             DetailContent(
-                definedWord = definedWord,
+                selectedEmail = uiState.selectedEmail,
                 modifier = if (isListVisible) {
                     Modifier.padding(start = 12.dp)
                 } else {
@@ -147,67 +118,70 @@ fun EmailPane(
  */
 @Composable
 private fun ListContent(
-    words: List<String>,
-    selectionState: SelectionVisibilityState,
-    onIndexClick: (index: Int) -> Unit,
-    modifier: Modifier = Modifier,
-    selectedFolder: EmailFolder = EmailFolder.Inbox
+    emails: List<Email>,
+    selectedEmail: Email?,
+    onEmailClick: (email: Email) -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    if (emails.isEmpty()) {
+        Text(
+            text = "Empty folder",
+            modifier = modifier
+        )
+        return
+    }
+
     LazyColumn(
         contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .then(
-                when (selectionState) {
-                    SelectionVisibilityState.NoSelection -> Modifier
-                    is SelectionVisibilityState.ShowSelection -> Modifier.selectableGroup()
+                when (selectedEmail) {
+                    null -> Modifier
+                    else -> Modifier.selectableGroup()
                 }
             )
     ) {
-        itemsIndexed(words) { index, word ->
+        items(emails) { email ->
             val interactionSource = remember { MutableInteractionSource() }
 
-            val interactionModifier = when (selectionState) {
-                SelectionVisibilityState.NoSelection -> {
+            val interactionModifier = when (selectedEmail) {
+                null -> {
                     Modifier.clickable(
                         interactionSource = interactionSource,
                         indication = rememberRipple(),
-                        onClick = { onIndexClick(index) }
+                        onClick = { onEmailClick(email) }
                     )
                 }
-                is SelectionVisibilityState.ShowSelection -> {
+                else -> {
                     Modifier.selectable(
-                        selected = index == selectionState.selectedWordIndex,
+                        selected = email == selectedEmail,
                         interactionSource = interactionSource,
                         indication = rememberRipple(),
-                        onClick = { onIndexClick(index) }
+                        onClick = { onEmailClick(email) }
                     )
                 }
             }
 
-            val containerColor = when (selectionState) {
-                SelectionVisibilityState.NoSelection -> MaterialTheme.colorScheme.surface
-                is SelectionVisibilityState.ShowSelection ->
-                    if (index == selectionState.selectedWordIndex) {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    }
+            val containerColor = when (selectedEmail) {
+                null -> MaterialTheme.colorScheme.surface
+                else -> if (email == selectedEmail) {
+                    MaterialTheme.colorScheme.surfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.surface
+                }
             }
-            val borderStroke = when (selectionState) {
-                SelectionVisibilityState.NoSelection -> BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outline
+            val borderStroke = when (selectedEmail) {
+                null -> BorderStroke(
+                    1.dp, MaterialTheme.colorScheme.outline
                 )
-                is SelectionVisibilityState.ShowSelection ->
-                    if (index == selectionState.selectedWordIndex) {
-                        null
-                    } else {
-                        BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outline
-                        )
-                    }
+                else -> if (email == selectedEmail) {
+                    null
+                } else {
+                    BorderStroke(
+                        1.dp, MaterialTheme.colorScheme.outline
+                    )
+                }
             }
 
             // TODO: Card selection overfills the Card
@@ -219,14 +193,7 @@ private fun ListContent(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = when (selectedFolder) {
-                        EmailFolder.Inbox -> "Inbox - $word"
-                        EmailFolder.Drafts -> "Drafts - $word"
-                        EmailFolder.Archive -> "Archive - $word"
-                        EmailFolder.Sent -> "Sent - $word"
-                        EmailFolder.Deleted -> "Deleted - $word"
-                        EmailFolder.Junk -> "Junk - $word"
-                    },
+                    text = email.subject,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
@@ -241,7 +208,7 @@ private fun ListContent(
  */
 @Composable
 private fun DetailContent(
-    definedWord: DefinedWord?,
+    selectedEmail: Email?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -249,13 +216,13 @@ private fun DetailContent(
             .verticalScroll(rememberScrollState())
             .padding(vertical = 16.dp)
     ) {
-        if (definedWord != null) {
+        if (selectedEmail != null) {
             Text(
-                text = definedWord.word,
+                text = selectedEmail.subject,
                 style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                text = definedWord.definition
+                text = selectedEmail.body
             )
         } else {
             Text(
@@ -263,27 +230,6 @@ private fun DetailContent(
             )
         }
     }
-}
-
-/**
- * The description of the selection state for the [ListContent]
- */
-sealed interface SelectionVisibilityState {
-
-    /**
-     * No selection should be shown, and each item should be clickable.
-     */
-    object NoSelection : SelectionVisibilityState
-
-    /**
-     * Selection state should be shown, and each item should be selectable.
-     */
-    data class ShowSelection(
-        /**
-         * The index of the word that is selected.
-         */
-        val selectedWordIndex: Int
-    ) : SelectionVisibilityState
 }
 
 @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)

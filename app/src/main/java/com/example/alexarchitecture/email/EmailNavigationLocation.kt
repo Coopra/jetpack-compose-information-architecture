@@ -32,7 +32,7 @@ class EmailNavigationLocation(
     override fun Content(modifier: Modifier) {
         val viewModel: EmailViewModel = viewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        EmailPane(windowSizeClass, displayFeatures, modifier = modifier, selectedFolder = uiState.selectedFolder)
+        EmailPane(windowSizeClass, displayFeatures, modifier = modifier)
     }
 
     @Composable
