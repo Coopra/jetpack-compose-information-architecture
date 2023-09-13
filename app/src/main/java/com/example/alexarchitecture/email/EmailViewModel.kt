@@ -8,9 +8,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 data class EmailUiState(
-    val selectedFolder: EmailFolder = EmailFolder.Inbox,
+    val selectedFolder: EmailFolder = InboxFolder(),
     val selectedEmail: Email? = null,
-    val folderEmails: List<Email> = emptyList()
+    val folderEmails: List<Email> = emptyList(),
+    val emailFolders: List<EmailFolder> = emptyList(),
 )
 
 class EmailViewModel : ViewModel() {
@@ -18,8 +19,13 @@ class EmailViewModel : ViewModel() {
     val uiState: StateFlow<EmailUiState> = _uiState.asStateFlow()
 
     init {
+        val emailFolders = fetchEmailFolders()
+
         _uiState.update {
-            it.copy(folderEmails = fetchEmailsForFolder(it.selectedFolder))
+            it.copy(
+                emailFolders = emailFolders,
+                folderEmails = fetchEmailsForFolder(emailFolders.first())
+            )
         }
     }
 
@@ -40,7 +46,7 @@ class EmailViewModel : ViewModel() {
 
     private fun fetchEmailsForFolder(folder: EmailFolder): List<Email> {
         return when (folder) {
-            EmailFolder.Inbox -> {
+            is InboxFolder -> {
                 listOf(
                     Email("John Doe", "Hello", "Hello, how are you?"),
                     Email("Jane Doe", "Re: Hello", "I'm good, thanks!"),
@@ -50,5 +56,9 @@ class EmailViewModel : ViewModel() {
 
             else -> emptyList()
         }
+    }
+
+    private fun fetchEmailFolders(): List<EmailFolder> {
+        return listOf(InboxFolder(), DraftsFolder(), ArchiveFolder(), SentFolder(), DeletedFolder(), JunkFolder())
     }
 }
