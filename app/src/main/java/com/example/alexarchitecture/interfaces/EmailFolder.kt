@@ -1,4 +1,4 @@
-package com.example.alexarchitecture.email
+package com.example.alexarchitecture.interfaces
 
 import androidx.annotation.DrawableRes
 

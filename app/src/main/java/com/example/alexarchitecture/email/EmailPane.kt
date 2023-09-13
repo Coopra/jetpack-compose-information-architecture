@@ -38,6 +38,7 @@ import androidx.window.layout.DisplayFeature
 import com.example.alexarchitecture.DeviceSizePreviews
 import com.example.alexarchitecture.ListDetail
 import com.example.alexarchitecture.R
+import com.example.alexarchitecture.interfaces.EmailFolder
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 

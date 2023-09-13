@@ -1,6 +1,7 @@
 package com.example.alexarchitecture.email
 
 import com.example.alexarchitecture.R
+import com.example.alexarchitecture.interfaces.EmailFolder
 
 class ArchiveFolder: EmailFolder {
     override val title: String
