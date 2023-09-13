@@ -8,23 +8,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.layout.DisplayFeature
 import com.example.alexarchitecture.R
+import com.example.alexarchitecture.interfaces.EmailFolder
 import com.example.alexarchitecture.interfaces.NavigationLocation
 
 class EmailNavigationLocation(
     private val windowSizeClass: WindowSizeClass,
     private val displayFeatures: List<DisplayFeature>
 ): NavigationLocation {
-    private val emailFolders = listOf(InboxFolder(), DraftsFolder(), ArchiveFolder(), SentFolder(), DeletedFolder(), JunkFolder())
-    private var selectedFolder by mutableStateOf(emailFolders.first())
-
     override val title: String
         get() = "Email"
     override val icon: Int
@@ -34,21 +30,25 @@ class EmailNavigationLocation(
 
     @Composable
     override fun Content(modifier: Modifier) {
-        EmailPane(windowSizeClass, displayFeatures, modifier = modifier, selectedFolder = selectedFolder)
+        val viewModel: EmailViewModel = viewModel()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        EmailPane(windowSizeClass, displayFeatures, modifier = modifier, selectedFolder = uiState.selectedFolder)
     }
 
     @Composable
     override fun DrawerContent(
         modifier: Modifier,
         onDrawerItemClick: (() -> Unit)?) {
-        toolbarTitle = selectedFolder.title
+        val viewModel: EmailViewModel = viewModel()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        toolbarTitle = uiState.selectedFolder.title
 
-        emailFolders.forEach { emailFolder ->
+        EmailFolder.values().forEach { emailFolder ->
             NavigationDrawerItem(label = { Text(text = emailFolder.title) },
-                selected = selectedFolder == emailFolder,
+                selected = emailFolder == uiState.selectedFolder,
                 onClick = {
-                    selectedFolder = emailFolder
-                    toolbarTitle = selectedFolder.title
+                    viewModel.updateFolderSelection(emailFolder)
+                    toolbarTitle = uiState.selectedFolder.title
                     onDrawerItemClick?.invoke()
                 },
                 icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },

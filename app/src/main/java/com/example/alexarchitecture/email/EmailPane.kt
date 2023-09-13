@@ -69,7 +69,7 @@ fun EmailPane(
     windowSizeClass: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
     modifier: Modifier = Modifier,
-    selectedFolder: EmailFolder = InboxFolder()
+    selectedFolder: EmailFolder = EmailFolder.Inbox
 ) {
     // Query for the current window size class
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
@@ -151,7 +151,7 @@ private fun ListContent(
     selectionState: SelectionVisibilityState,
     onIndexClick: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
-    selectedFolder: EmailFolder = InboxFolder()
+    selectedFolder: EmailFolder = EmailFolder.Inbox
 ) {
     LazyColumn(
         contentPadding = PaddingValues(vertical = 16.dp),
@@ -220,13 +220,12 @@ private fun ListContent(
             ) {
                 Text(
                     text = when (selectedFolder) {
-                        is InboxFolder -> "Inbox - $word"
-                        is DraftsFolder -> "Drafts - $word"
-                        is ArchiveFolder -> "Archive - $word"
-                        is SentFolder -> "Sent - $word"
-                        is DeletedFolder -> "Deleted - $word"
-                        is JunkFolder -> "Junk - $word"
-                        else -> word
+                        EmailFolder.Inbox -> "Inbox - $word"
+                        EmailFolder.Drafts -> "Drafts - $word"
+                        EmailFolder.Archive -> "Archive - $word"
+                        EmailFolder.Sent -> "Sent - $word"
+                        EmailFolder.Deleted -> "Deleted - $word"
+                        EmailFolder.Junk -> "Junk - $word"
                     },
                     modifier = Modifier
                         .fillMaxWidth()

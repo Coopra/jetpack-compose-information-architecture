@@ -13,7 +13,6 @@ import com.example.alexarchitecture.apps.AppsNavigationLocation
 import com.example.alexarchitecture.calendar.CalendarNavigationLocation
 import com.example.alexarchitecture.email.EmailNavigationLocation
 import com.example.alexarchitecture.feed.FeedNavigationLocation
-import com.example.alexarchitecture.interfaces.NavigationLocation
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import com.google.accompanist.adaptive.calculateDisplayFeatures
 
