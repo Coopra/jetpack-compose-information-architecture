@@ -38,14 +38,14 @@ class EmailNavigationLocation(
         onDrawerItemClick: (() -> Unit)?) {
         val viewModel: EmailViewModel = viewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        toolbarTitle = uiState.selectedFolder.title
+        toolbarTitle = uiState.selectedFolder?.title ?: ""
 
         uiState.emailFolders.forEach { emailFolder ->
             NavigationDrawerItem(label = { Text(text = emailFolder.title) },
-                selected = emailFolder::class == uiState.selectedFolder::class,
+                selected = emailFolder.id == uiState.selectedFolder?.id,
                 onClick = {
                     viewModel.updateFolderSelection(emailFolder)
-                    toolbarTitle = uiState.selectedFolder.title
+                    toolbarTitle = uiState.selectedFolder?.title ?: ""
                     onDrawerItemClick?.invoke()
                 },
                 icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },
