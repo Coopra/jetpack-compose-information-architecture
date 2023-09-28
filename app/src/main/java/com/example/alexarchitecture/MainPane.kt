@@ -51,9 +51,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.window.layout.DisplayFeature
-import com.example.alexarchitecture.email.EmailPane
-import com.example.alexarchitecture.email.EmailViewModel
 import com.example.alexarchitecture.interfaces.NavigationLocation
 import kotlinx.coroutines.launch
 
@@ -61,25 +58,20 @@ import kotlinx.coroutines.launch
 fun MainPane(
     windowSizeClass: WindowSizeClass,
     navigationLocations: List<NavigationLocation>,
-    displayFeatures: List<DisplayFeature>,
     viewModelStoreOwner: ViewModelStoreOwner
 ) {
     assert(navigationLocations.isNotEmpty())
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
 
     when (widthSizeClass) {
-        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(windowSizeClass, displayFeatures, viewModelStoreOwner)
+        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(viewModelStoreOwner)
         WindowWidthSizeClass.Expanded -> ExpandedPane(navigationLocations)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CompactPane(
-    windowSizeClass: WindowSizeClass,
-    displayFeatures: List<DisplayFeature>,
-    viewModelStoreOwner: ViewModelStoreOwner
-) {
+private fun CompactPane(viewModelStoreOwner: ViewModelStoreOwner) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
@@ -148,23 +140,13 @@ private fun CompactPane(
         }
     }, scaffoldState = rememberScaffoldState(drawerState = drawerState)) { padding ->
         NavHost(navController = navController, startDestination = ScreenContribution.Email.route, modifier = Modifier.padding(padding)) {
-            composable(ScreenContribution.Email.route) {
-                CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
-                    val emailViewModel: EmailViewModel = viewModel()
-                    val emailUiState by emailViewModel.uiState.collectAsStateWithLifecycle()
-                    EmailPane(
-                        windowSizeClass = windowSizeClass, displayFeatures = displayFeatures, onEmailSelect = { email ->
-                            emailViewModel.updateSelectedEmail(email)
-                        }, selectedEmail = emailUiState.selectedEmail, folderEmails = emailUiState.folderEmails
-                    )
-                    LaunchedEffect(emailUiState.selectedFolder) {
-                        drawerState.close()
+            mainUiState.screenContributions.forEach { screenContribution ->
+                composable(screenContribution.route) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
+                        screenContribution.content.invoke()
                     }
                 }
             }
-            composable(ScreenContribution.Calendar.route) { Text(text = "Calendar") }
-            composable(ScreenContribution.Feed.route) { Text(text = "Feed") }
-            composable(ScreenContribution.Apps.route) { Text(text = "Apps") }
         }
     }
 }

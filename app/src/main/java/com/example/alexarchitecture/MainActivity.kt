@@ -32,10 +32,7 @@ class MainActivity : ComponentActivity() {
                     val viewModelStoreOwner = compositionLocalOf<ViewModelStoreOwner> { this }
 
                     MainPane(
-                        windowSizeClass = windowSizeClass,
-                        navigationLocations = navigationLocations,
-                        displayFeatures = displayFeatures,
-                        viewModelStoreOwner = viewModelStoreOwner.current
+                        windowSizeClass = windowSizeClass, navigationLocations = navigationLocations, viewModelStoreOwner = viewModelStoreOwner.current
                     )
                 }
             }
