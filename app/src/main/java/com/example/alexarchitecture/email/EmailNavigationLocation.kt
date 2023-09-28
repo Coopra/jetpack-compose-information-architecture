@@ -29,7 +29,7 @@ class EmailNavigationLocation(
 
     @Composable
     override fun Content(modifier: Modifier) {
-        EmailPane(windowSizeClass, displayFeatures, modifier = modifier)
+        // EmailPane(windowSizeClass, displayFeatures, modifier = modifier)
     }
 
     @Composable

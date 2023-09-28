@@ -17,9 +17,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -27,45 +29,42 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.layout.DisplayFeature
-import com.example.alexarchitecture.DeviceSizePreviews
 import com.example.alexarchitecture.ListDetail
 import com.example.alexarchitecture.R
-import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 
 @Composable
 fun EmailPane(
     windowSizeClass: WindowSizeClass,
     displayFeatures: List<DisplayFeature>,
-    modifier: Modifier = Modifier
+    onEmailSelect: (Email?) -> Unit,
+    modifier: Modifier = Modifier,
+    selectedEmail: Email? = null,
+    folderEmails: List<Email> = emptyList()
 ) {
     // Query for the current window size class
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
-
-    val viewModel: EmailViewModel = viewModel()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val showListAndDetail = when (widthSizeClass) {
         WindowWidthSizeClass.Compact -> false
         else -> true
     }
 
-    ListDetail(isDetailOpen = uiState.selectedEmail != null, setIsDetailOpen = {
+    ListDetail(isDetailOpen = selectedEmail != null, setIsDetailOpen = {
         if (!it) {
-            viewModel.updateSelectedEmail(null)
+            onEmailSelect(null)
         }
     }, showListAndDetail = showListAndDetail, list = { isDetailVisible ->
         ListContent(
-            emails = uiState.folderEmails, selectedEmail = uiState.selectedEmail,
+            emails = folderEmails, selectedEmail = selectedEmail,
             onEmailClick = { email ->
-                viewModel.updateSelectedEmail(email)
+                onEmailSelect(email)
             }, modifier = if (isDetailVisible) {
                 Modifier.padding(end = 12.dp)
             } else {
@@ -74,7 +73,7 @@ fun EmailPane(
         )
     }, detail = { isListVisible ->
         DetailContent(
-            selectedEmail = uiState.selectedEmail,
+            selectedEmail = selectedEmail,
             modifier = if (isListVisible) {
                 Modifier.padding(start = 12.dp)
             } else {
@@ -90,6 +89,25 @@ fun EmailPane(
         }
     )
     )
+}
+
+@Composable
+fun EmailDrawer() {
+    val viewModel: EmailViewModel = viewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // toolbarTitle = uiState.selectedFolder?.title ?: ""
+
+    uiState.emailFolders.forEach { emailFolder ->
+        NavigationDrawerItem(label = { Text(text = emailFolder.title) },
+            selected = emailFolder.id == uiState.selectedFolder?.id,
+            onClick = {
+                viewModel.updateFolderSelection(emailFolder)
+                // toolbarTitle = uiState.selectedFolder?.title ?: ""
+            },
+            icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        )
+    }
 }
 
 /**
@@ -211,12 +229,12 @@ private fun DetailContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
-@Composable
-@DeviceSizePreviews
-fun EmailPanePreview() {
-    AlexArchitectureTheme {
-        val configuration = LocalConfiguration.current
-        EmailPane(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf())
-    }
-}
+// @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+// @Composable
+// @DeviceSizePreviews
+// fun EmailPanePreview() {
+//     AlexArchitectureTheme {
+//         val configuration = LocalConfiguration.current
+//         EmailPane(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf())
+//     }
+// }

@@ -8,7 +8,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelStoreOwner
 import com.example.alexarchitecture.apps.AppsNavigationLocation
 import com.example.alexarchitecture.calendar.CalendarNavigationLocation
 import com.example.alexarchitecture.email.EmailNavigationLocation
@@ -27,10 +29,13 @@ class MainActivity : ComponentActivity() {
                     val windowSizeClass = calculateWindowSizeClass(activity = this)
                     val displayFeatures = calculateDisplayFeatures(activity = this)
                     val navigationLocations = listOf(EmailNavigationLocation(windowSizeClass, displayFeatures), CalendarNavigationLocation(), FeedNavigationLocation(), AppsNavigationLocation())
+                    val viewModelStoreOwner = compositionLocalOf<ViewModelStoreOwner> { this }
 
                     MainPane(
                         windowSizeClass = windowSizeClass,
-                        navigationLocations = navigationLocations
+                        navigationLocations = navigationLocations,
+                        displayFeatures = displayFeatures,
+                        viewModelStoreOwner = viewModelStoreOwner.current
                     )
                 }
             }
