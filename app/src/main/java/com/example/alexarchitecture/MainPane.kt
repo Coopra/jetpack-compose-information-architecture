@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.DrawerState
 import androidx.compose.material.DrawerValue
 import androidx.compose.material.Scaffold
@@ -33,11 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,35 +47,36 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.alexarchitecture.contributions.ScreenContribution
-import com.example.alexarchitecture.interfaces.NavigationLocation
 import kotlinx.coroutines.launch
 
 @Composable
 fun MainPane(
     windowSizeClass: WindowSizeClass,
-    navigationLocations: List<NavigationLocation>,
     viewModelStoreOwner: ViewModelStoreOwner
 ) {
-    assert(navigationLocations.isNotEmpty())
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
+    val navController = rememberNavController()
 
     when (widthSizeClass) {
-        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(viewModelStoreOwner)
-        WindowWidthSizeClass.Expanded -> ExpandedPane(navigationLocations)
+        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(viewModelStoreOwner, navController)
+        WindowWidthSizeClass.Expanded -> ExpandedPane(navController)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CompactPane(viewModelStoreOwner: ViewModelStoreOwner) {
+private fun CompactPane(
+    viewModelStoreOwner: ViewModelStoreOwner,
+    navController: NavHostController
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val mainViewModel: MainViewModel = viewModel()
     val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
@@ -105,9 +105,9 @@ private fun CompactPane(viewModelStoreOwner: ViewModelStoreOwner) {
                             saveState = true
                         }
                         // Avoid multiple copies of the same destination when
-                        // reselecting the same item
+                        // re-selecting the same item
                         launchSingleTop = true
-                        // Restore state when reselecting a previously selected item
+                        // Restore state when re-selecting a previously selected item
                         restoreState = true
                     }
                 }, icon = {
@@ -158,16 +158,22 @@ private fun CompactPane(viewModelStoreOwner: ViewModelStoreOwner) {
 }
 
 @Composable
-private fun ExpandedPane(navigationLocations: List<NavigationLocation>) {
-    var navigationLocationIndex by rememberSaveable {
-        mutableIntStateOf(0)
-    }
+private fun ExpandedPane(navController: NavHostController) {
+    val mainViewModel: MainViewModel = viewModel()
+    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    LaunchedEffect(currentDestination) {
+        if (currentDestination != null) {
+            mainViewModel.updateCurrentScreen(currentDestination)
+        }
+    }
 
     Row {
-        NavigationRail {
-            AnimatedVisibility(visible = navigationLocations[navigationLocationIndex].hasDrawerContent) {
+        NavigationRail(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            AnimatedVisibility(visible = mainUiState.currentScreen.drawerContribution != null) {
                 IconButton(onClick = {
                     when (drawerState.currentValue) {
                         DrawerValue.Open -> scope.launch { drawerState.close() }
@@ -178,32 +184,54 @@ private fun ExpandedPane(navigationLocations: List<NavigationLocation>) {
                 }
             }
 
-            FloatingActionButton(onClick = { /*TODO*/ }) {
-                Icon(painter = painterResource(id = R.drawable.outline_edit_24), contentDescription = "Compose")
+            mainUiState.currentScreen.fabContribution?.let { fabContribution ->
+                FloatingActionButton(onClick = { /*TODO*/ }) {
+                    AnimatedContent(targetState = fabContribution.icon) { targetState ->
+                        Icon(painter = painterResource(id = targetState), contentDescription = fabContribution.description)
+                    }
+                }
             }
 
             Spacer(Modifier.height(24.dp))
 
-            navigationLocations.forEachIndexed { index, navigationLocation ->
-                NavigationRailItem(selected = navigationLocationIndex == index,
-                    onClick = { navigationLocationIndex = index },
-                    icon = { Icon(painter = painterResource(id = navigationLocation.icon), contentDescription = navigationLocation.title) })
+            mainUiState.screenContributions.forEach { screen ->
+                NavigationRailItem(selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true, onClick = {
+                    navController.navigate(screen.route) {
+                        // Pop up to the start destination of the graph to
+                        // avoid building up a large stack of destinations
+                        // on the back stack as users select items
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        // Avoid multiple copies of the same destination when
+                        // re-selecting the same item
+                        launchSingleTop = true
+                        // Restore state when re-selecting a previously selected item
+                        restoreState = true
+                    }
+                }, icon = { Icon(painter = painterResource(id = screen.icon), contentDescription = screen.title) }, label = {
+                    Text(text = screen.title)
+                })
             }
         }
 
-        if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
-            MyDismissibleNavigationDrawer(drawerContent = {
-                DismissibleDrawerSheet {
-                    Spacer(Modifier.height(12.dp))
-                    navigationLocations[navigationLocationIndex].DrawerContent(
-                        modifier = Modifier
-                    )
+        NavHost(navController = navController, startDestination = ScreenContribution.Email.route) {
+            mainUiState.screenContributions.forEach { screenContribution ->
+                composable(screenContribution.route) {
+                    if (screenContribution.drawerContribution != null) {
+                        MyDismissibleNavigationDrawer(drawerContent = {
+                            DismissibleDrawerSheet {
+                                Spacer(Modifier.height(12.dp))
+                                screenContribution.drawerContribution.drawerContent.invoke()
+                            }
+                        }, drawerState = drawerState) {
+                            screenContribution.content.invoke()
+                        }
+                    } else {
+                        screenContribution.content.invoke()
+                    }
                 }
-            }, drawerState = drawerState) {
-                navigationLocations[navigationLocationIndex].Content(modifier = Modifier)
             }
-        } else {
-            navigationLocations[navigationLocationIndex].Content(modifier = Modifier)
         }
     }
 }
