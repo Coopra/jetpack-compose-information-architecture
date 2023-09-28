@@ -24,7 +24,8 @@ sealed class ScreenContribution(
     val icon: Int,
     val content: @Composable () -> Unit,
     val drawerContribution: DrawerContribution? = null,
-    val fabContribution: FABContribution? = null
+    val fabContribution: FABContribution? = null,
+    val toolbarContribution: ToolbarContribution? = null
 ) {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     object Email : ScreenContribution(
@@ -32,6 +33,7 @@ sealed class ScreenContribution(
             val activity = LocalContext.current.findActivity()
             val emailViewModel: EmailViewModel = viewModel()
             val emailUiState by emailViewModel.uiState.collectAsStateWithLifecycle()
+            ToolbarContribution.Email.title = emailUiState.selectedFolder?.title ?: "Email"
 
             EmailPane(
                 windowSizeClass = calculateWindowSizeClass(activity = activity),
@@ -42,7 +44,7 @@ sealed class ScreenContribution(
                 selectedEmail = emailUiState.selectedEmail,
                 folderEmails = emailUiState.folderEmails
             )
-        }, drawerContribution = DrawerContribution.Email, fabContribution = FABContribution.Email
+        }, drawerContribution = DrawerContribution.Email, fabContribution = FABContribution.Email, toolbarContribution = ToolbarContribution.Email
     )
 
     object Calendar : ScreenContribution("calendar", "Calendar", R.drawable.outline_calendar_month_24, {

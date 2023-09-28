@@ -135,7 +135,7 @@ private fun CompactPane(
             }
         }
     }, topBar = {
-        TopAppBar(title = { Text(text = currentScreen.title) }, navigationIcon = {
+        TopAppBar(title = { Text(text = currentScreen.toolbarContribution?.title ?: currentScreen.title) }, navigationIcon = {
             if (currentScreen.drawerContribution != null) {
                 IconButton(onClick = {
                     scope.launch {
