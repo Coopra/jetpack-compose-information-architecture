@@ -45,6 +45,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -62,10 +63,35 @@ fun MainPane(
 ) {
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val mainViewModel: MainViewModel = viewModel()
+    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(currentDestination) {
+        if (currentDestination != null) {
+            mainViewModel.updateCurrentScreen(currentDestination)
+        }
+    }
 
     when (widthSizeClass) {
-        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(viewModelStoreOwner, navController)
-        WindowWidthSizeClass.Expanded -> ExpandedPane(navController)
+        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(
+            viewModelStoreOwner,
+            mainUiState.screenContributions,
+            mainUiState.currentScreen,
+            navController,
+            currentDestination
+        ) { screenContribution ->
+            navigateToScreen(navController, screenContribution)
+        }
+
+        WindowWidthSizeClass.Expanded -> ExpandedPane(
+            mainUiState.screenContributions,
+            mainUiState.currentScreen,
+            navController,
+            currentDestination
+        ) { screenContribution ->
+            navigateToScreen(navController, screenContribution)
+        }
     }
 }
 
@@ -73,19 +99,14 @@ fun MainPane(
 @Composable
 private fun CompactPane(
     viewModelStoreOwner: ViewModelStoreOwner,
-    navController: NavHostController
+    screenContributions: List<ScreenContribution>,
+    currentScreen: ScreenContribution,
+    navController: NavHostController,
+    currentDestination: NavDestination?,
+    onNavigateToScreen: (ScreenContribution) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val mainViewModel: MainViewModel = viewModel()
-    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
-    val currentDestination = navBackStackEntry?.destination
-    LaunchedEffect(currentDestination) {
-        if (currentDestination != null) {
-            mainViewModel.updateCurrentScreen(currentDestination)
-        }
-    }
 
     BackHandler(enabled = drawerState.isOpen) {
         scope.launch {
@@ -95,21 +116,9 @@ private fun CompactPane(
 
     Scaffold(bottomBar = {
         NavigationBar {
-            mainUiState.screenContributions.forEach { screen ->
+            screenContributions.forEach { screen ->
                 NavigationBarItem(selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true, onClick = {
-                    navController.navigate(screen.route) {
-                        // Pop up to the start destination of the graph to
-                        // avoid building up a large stack of destinations
-                        // on the back stack as users select items
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        // Avoid multiple copies of the same destination when
-                        // re-selecting the same item
-                        launchSingleTop = true
-                        // Restore state when re-selecting a previously selected item
-                        restoreState = true
-                    }
+                    onNavigateToScreen(screen)
                 }, icon = {
                     Icon(painter = painterResource(id = screen.icon), contentDescription = screen.title)
                 }, label = {
@@ -118,7 +127,7 @@ private fun CompactPane(
             }
         }
     }, floatingActionButton = {
-        mainUiState.currentScreen.fabContribution?.let { fabContribution ->
+        currentScreen.fabContribution?.let { fabContribution ->
             FloatingActionButton(onClick = { /*TODO*/ }) {
                 AnimatedContent(targetState = fabContribution.icon) { targetState ->
                     Icon(painter = painterResource(id = targetState), contentDescription = fabContribution.description)
@@ -126,8 +135,8 @@ private fun CompactPane(
             }
         }
     }, topBar = {
-        TopAppBar(title = { Text(text = mainUiState.currentScreen.title) }, navigationIcon = {
-            if (mainUiState.currentScreen.drawerContribution != null) {
+        TopAppBar(title = { Text(text = currentScreen.title) }, navigationIcon = {
+            if (currentScreen.drawerContribution != null) {
                 IconButton(onClick = {
                     scope.launch {
                         drawerState.open()
@@ -138,7 +147,7 @@ private fun CompactPane(
             }
         })
     }, drawerContent = {
-        mainUiState.currentScreen.drawerContribution?.let { drawerContribution ->
+        currentScreen.drawerContribution?.let { drawerContribution ->
             ModalDrawerSheet(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.height(12.dp))
                 drawerContribution.drawerContent.invoke()
@@ -146,7 +155,7 @@ private fun CompactPane(
         }
     }, scaffoldState = rememberScaffoldState(drawerState = drawerState)) { padding ->
         NavHost(navController = navController, startDestination = ScreenContribution.Email.route, modifier = Modifier.padding(padding)) {
-            mainUiState.screenContributions.forEach { screenContribution ->
+            screenContributions.forEach { screenContribution ->
                 composable(screenContribution.route) {
                     CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
                         screenContribution.content.invoke()
@@ -158,22 +167,19 @@ private fun CompactPane(
 }
 
 @Composable
-private fun ExpandedPane(navController: NavHostController) {
-    val mainViewModel: MainViewModel = viewModel()
-    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+private fun ExpandedPane(
+    screenContributions: List<ScreenContribution>,
+    currentScreen: ScreenContribution,
+    navController: NavHostController,
+    currentDestination: NavDestination?,
+    onNavigateToScreen: (ScreenContribution) -> Unit
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-    LaunchedEffect(currentDestination) {
-        if (currentDestination != null) {
-            mainViewModel.updateCurrentScreen(currentDestination)
-        }
-    }
 
     Row {
         NavigationRail(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            AnimatedVisibility(visible = mainUiState.currentScreen.drawerContribution != null) {
+            AnimatedVisibility(visible = currentScreen.drawerContribution != null) {
                 IconButton(onClick = {
                     when (drawerState.currentValue) {
                         DrawerValue.Open -> scope.launch { drawerState.close() }
@@ -184,7 +190,7 @@ private fun ExpandedPane(navController: NavHostController) {
                 }
             }
 
-            mainUiState.currentScreen.fabContribution?.let { fabContribution ->
+            currentScreen.fabContribution?.let { fabContribution ->
                 FloatingActionButton(onClick = { /*TODO*/ }) {
                     AnimatedContent(targetState = fabContribution.icon) { targetState ->
                         Icon(painter = painterResource(id = targetState), contentDescription = fabContribution.description)
@@ -194,21 +200,9 @@ private fun ExpandedPane(navController: NavHostController) {
 
             Spacer(Modifier.height(24.dp))
 
-            mainUiState.screenContributions.forEach { screen ->
+            screenContributions.forEach { screen ->
                 NavigationRailItem(selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true, onClick = {
-                    navController.navigate(screen.route) {
-                        // Pop up to the start destination of the graph to
-                        // avoid building up a large stack of destinations
-                        // on the back stack as users select items
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        // Avoid multiple copies of the same destination when
-                        // re-selecting the same item
-                        launchSingleTop = true
-                        // Restore state when re-selecting a previously selected item
-                        restoreState = true
-                    }
+                    onNavigateToScreen(screen)
                 }, icon = { Icon(painter = painterResource(id = screen.icon), contentDescription = screen.title) }, label = {
                     Text(text = screen.title)
                 })
@@ -216,7 +210,7 @@ private fun ExpandedPane(navController: NavHostController) {
         }
 
         NavHost(navController = navController, startDestination = ScreenContribution.Email.route) {
-            mainUiState.screenContributions.forEach { screenContribution ->
+            screenContributions.forEach { screenContribution ->
                 composable(screenContribution.route) {
                     if (screenContribution.drawerContribution != null) {
                         MyDismissibleNavigationDrawer(drawerContent = {
@@ -233,6 +227,25 @@ private fun ExpandedPane(navController: NavHostController) {
                 }
             }
         }
+    }
+}
+
+private fun navigateToScreen(
+    navController: NavHostController,
+    screenContribution: ScreenContribution
+) {
+    navController.navigate(screenContribution.route) {
+        // Pop up to the start destination of the graph to
+        // avoid building up a large stack of destinations
+        // on the back stack as users select items
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
+        }
+        // Avoid multiple copies of the same destination when
+        // re-selecting the same item
+        launchSingleTop = true
+        // Restore state when re-selecting a previously selected item
+        restoreState = true
     }
 }
 
