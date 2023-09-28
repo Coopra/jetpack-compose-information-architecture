@@ -105,7 +105,7 @@ private fun CompactPane(
     currentDestination: NavDestination?,
     onNavigateToScreen: (ScreenContribution) -> Unit
 ) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val drawerState: DrawerState = currentScreen.drawerContribution?.drawerState() ?: rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     BackHandler(enabled = drawerState.isOpen) {
@@ -150,7 +150,7 @@ private fun CompactPane(
         currentScreen.drawerContribution?.let { drawerContribution ->
             ModalDrawerSheet(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.height(12.dp))
-                drawerContribution.drawerContent.invoke()
+                drawerContribution.Content()
             }
         }
     }, scaffoldState = rememberScaffoldState(drawerState = drawerState)) { padding ->
@@ -216,7 +216,7 @@ private fun ExpandedPane(
                         MyDismissibleNavigationDrawer(drawerContent = {
                             DismissibleDrawerSheet {
                                 Spacer(Modifier.height(12.dp))
-                                screenContribution.drawerContribution.drawerContent.invoke()
+                                screenContribution.drawerContribution.Content()
                             }
                         }, drawerState = drawerState) {
                             screenContribution.content.invoke()

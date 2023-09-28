@@ -32,8 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.layout.DisplayFeature
 import com.example.alexarchitecture.ListDetail
 import com.example.alexarchitecture.R
@@ -92,16 +90,18 @@ fun EmailPane(
 }
 
 @Composable
-fun EmailDrawer() {
-    val viewModel: EmailViewModel = viewModel()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+fun EmailDrawer(
+    emailFolders: List<EmailFolder>,
+    selectedFolder: EmailFolder?,
+    onFolderSelected: (EmailFolder) -> Unit
+) {
     // toolbarTitle = uiState.selectedFolder?.title ?: ""
 
-    uiState.emailFolders.forEach { emailFolder ->
+    emailFolders.forEach { emailFolder ->
         NavigationDrawerItem(label = { Text(text = emailFolder.title) },
-            selected = emailFolder.id == uiState.selectedFolder?.id,
+            selected = emailFolder.id == selectedFolder?.id,
             onClick = {
-                viewModel.updateFolderSelection(emailFolder)
+                onFolderSelected(emailFolder)
                 // toolbarTitle = uiState.selectedFolder?.title ?: ""
             },
             icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },
