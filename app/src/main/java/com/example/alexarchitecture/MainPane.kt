@@ -1,6 +1,7 @@
 package com.example.alexarchitecture
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -51,6 +52,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.alexarchitecture.contributions.ScreenContribution
 import com.example.alexarchitecture.interfaces.NavigationLocation
 import kotlinx.coroutines.launch
 
@@ -116,8 +118,12 @@ private fun CompactPane(viewModelStoreOwner: ViewModelStoreOwner) {
             }
         }
     }, floatingActionButton = {
-        FloatingActionButton(onClick = { /*TODO*/ }) {
-            Icon(painter = painterResource(id = R.drawable.outline_edit_24), contentDescription = "Compose")
+        mainUiState.currentScreen.fabContribution?.let { fabContribution ->
+            FloatingActionButton(onClick = { /*TODO*/ }) {
+                AnimatedContent(targetState = fabContribution.icon) { targetState ->
+                    Icon(painter = painterResource(id = targetState), contentDescription = fabContribution.description)
+                }
+            }
         }
     }, topBar = {
         TopAppBar(title = { Text(text = mainUiState.currentScreen.title) }, navigationIcon = {

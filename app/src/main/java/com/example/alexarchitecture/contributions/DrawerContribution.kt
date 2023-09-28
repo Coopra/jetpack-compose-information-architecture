@@ -1,4 +1,4 @@
-package com.example.alexarchitecture
+package com.example.alexarchitecture.contributions
 
 import androidx.compose.runtime.Composable
 import com.example.alexarchitecture.email.EmailDrawer

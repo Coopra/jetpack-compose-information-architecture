@@ -2,6 +2,7 @@ package com.example.alexarchitecture
 
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavDestination
+import com.example.alexarchitecture.contributions.ScreenContribution
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
