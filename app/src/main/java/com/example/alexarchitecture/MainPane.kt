@@ -75,20 +75,13 @@ fun MainPane(
 
     when (widthSizeClass) {
         WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(
-            viewModelStoreOwner,
-            mainUiState.screenContributions,
-            mainUiState.currentScreen,
-            navController,
-            currentDestination
+            viewModelStoreOwner, mainUiState.screenContributions, mainUiState.currentScreen, navController, currentDestination
         ) { screenContribution ->
             navigateToScreen(navController, screenContribution)
         }
 
         WindowWidthSizeClass.Expanded -> ExpandedPane(
-            mainUiState.screenContributions,
-            mainUiState.currentScreen,
-            navController,
-            currentDestination
+            mainUiState.screenContributions, mainUiState.currentScreen, navController, currentDestination
         ) { screenContribution ->
             navigateToScreen(navController, screenContribution)
         }
@@ -143,6 +136,16 @@ private fun CompactPane(
                     }
                 }) {
                     Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
+                }
+            }
+        }, actions = {
+            currentScreen.toolbarContribution?.let { toolbarContribution ->
+                if (toolbarContribution.actions.isNotEmpty()) {
+                    toolbarContribution.actions.forEach { toolbarAction ->
+                        IconButton(onClick = toolbarAction.onClick) {
+                            Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+                        }
+                    }
                 }
             }
         })

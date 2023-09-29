@@ -49,7 +49,7 @@ sealed class ScreenContribution(
 
     object Calendar : ScreenContribution("calendar", "Calendar", R.drawable.outline_calendar_month_24, {
         Text(text = "Calendar")
-    }, fabContribution = FABContribution.Calendar)
+    }, fabContribution = FABContribution.Calendar, toolbarContribution = ToolbarContribution.Calendar)
 
     object Feed : ScreenContribution("feed", "Feed", R.drawable.outline_dynamic_feed_24, {
         Text(text = "Feed")
