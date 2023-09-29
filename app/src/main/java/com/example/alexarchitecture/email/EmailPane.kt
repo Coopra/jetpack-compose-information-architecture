@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
@@ -29,12 +30,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.window.layout.DisplayFeature
+import com.example.alexarchitecture.DeviceSizePreviews
 import com.example.alexarchitecture.ListDetail
 import com.example.alexarchitecture.R
+import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 
 @Composable
@@ -229,12 +234,15 @@ private fun DetailContent(
     }
 }
 
-// @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
-// @Composable
-// @DeviceSizePreviews
-// fun EmailPanePreview() {
-//     AlexArchitectureTheme {
-//         val configuration = LocalConfiguration.current
-//         EmailPane(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf())
-//     }
-// }
+@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+@Composable
+@DeviceSizePreviews
+fun EmailPanePreview() {
+    AlexArchitectureTheme {
+        val configuration = LocalConfiguration.current
+        EmailPane(
+            WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)),
+            listOf(),
+            onEmailSelect = {})
+    }
+}
