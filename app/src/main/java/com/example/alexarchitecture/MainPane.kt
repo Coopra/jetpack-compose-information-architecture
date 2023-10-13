@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -128,7 +129,7 @@ private fun CompactPane(
             }
         }
     }, topBar = {
-        TopAppBar(title = { Text(text = currentScreen.toolbarContribution?.title ?: currentScreen.title) }, navigationIcon = {
+        TopAppBar(title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) }, navigationIcon = {
             if (currentScreen.drawerContribution != null) {
                 IconButton(onClick = {
                     scope.launch {
@@ -169,6 +170,7 @@ private fun CompactPane(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExpandedPane(
     screenContributions: List<ScreenContribution>,
@@ -222,10 +224,42 @@ private fun ExpandedPane(
                                 screenContribution.drawerContribution.Content()
                             }
                         }, drawerState = drawerState) {
-                            screenContribution.content.invoke()
+                            Column {
+                                TopAppBar(
+                                    title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) },
+                                    actions = {
+                                        currentScreen.toolbarContribution?.let { toolbarContribution ->
+                                            if (toolbarContribution.actions.isNotEmpty()) {
+                                                toolbarContribution.actions.forEach { toolbarAction ->
+                                                    IconButton(onClick = toolbarAction.onClick) {
+                                                        Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
+                                screenContribution.content.invoke()
+                            }
                         }
                     } else {
-                        screenContribution.content.invoke()
+                        Column {
+                            TopAppBar(
+                                title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) },
+                                actions = {
+                                    currentScreen.toolbarContribution?.let { toolbarContribution ->
+                                        if (toolbarContribution.actions.isNotEmpty()) {
+                                            toolbarContribution.actions.forEach { toolbarAction ->
+                                                IconButton(onClick = toolbarAction.onClick) {
+                                                    Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                            screenContribution.content.invoke()
+                        }
                     }
                 }
             }

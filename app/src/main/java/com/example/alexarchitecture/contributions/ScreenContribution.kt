@@ -33,7 +33,7 @@ sealed class ScreenContribution(
             val activity = LocalContext.current.findActivity()
             val emailViewModel: EmailViewModel = viewModel()
             val emailUiState by emailViewModel.uiState.collectAsStateWithLifecycle()
-            ToolbarContribution.Email.title = emailUiState.selectedFolder?.title ?: "Email"
+            ToolbarContribution.Email.updateTitle(emailUiState.selectedFolder?.title ?: "Email")
 
             EmailPane(
                 windowSizeClass = calculateWindowSizeClass(activity = activity),
