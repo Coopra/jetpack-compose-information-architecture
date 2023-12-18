@@ -1,5 +1,6 @@
 package com.example.alexarchitecture.email
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,76 +23,51 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.window.layout.DisplayFeature
 import com.example.alexarchitecture.DeviceSizePreviews
-import com.example.alexarchitecture.ListDetail
 import com.example.alexarchitecture.R
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
-import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun EmailPane(
-    windowSizeClass: WindowSizeClass,
-    displayFeatures: List<DisplayFeature>,
     onEmailSelect: (Email?) -> Unit,
     modifier: Modifier = Modifier,
     selectedEmail: Email? = null,
     folderEmails: List<Email> = emptyList()
 ) {
-    // Query for the current window size class
-    val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
-
-    val showListAndDetail = when (widthSizeClass) {
-        WindowWidthSizeClass.Compact -> false
-        else -> true
+    val navigator = rememberListDetailPaneScaffoldNavigator()
+    ListDetailPaneScaffold(
+        listPane = {
+            ListContent(
+                emails = folderEmails, selectedEmail = selectedEmail,
+                onEmailClick = { email ->
+                    onEmailSelect(email)
+                    navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                }
+            )
+        },
+        modifier = modifier,
+        scaffoldState = navigator.scaffoldState
+    ) {
+        DetailContent(
+            selectedEmail = selectedEmail
+        )
     }
 
-    ListDetail(isDetailOpen = selectedEmail != null, setIsDetailOpen = {
-        if (!it) {
-            onEmailSelect(null)
-        }
-    }, showListAndDetail = showListAndDetail, list = { isDetailVisible ->
-        ListContent(
-            emails = folderEmails, selectedEmail = selectedEmail,
-            onEmailClick = { email ->
-                onEmailSelect(email)
-            }, modifier = if (isDetailVisible) {
-                Modifier.padding(end = 12.dp)
-            } else {
-                Modifier
-            }
-        )
-    }, detail = { isListVisible ->
-        DetailContent(
-            selectedEmail = selectedEmail,
-            modifier = if (isListVisible) {
-                Modifier.padding(start = 12.dp)
-            } else {
-                Modifier
-            }
-        )
-    }, twoPaneStrategy = HorizontalTwoPaneStrategy(
-        splitFraction = 1f / 3f,
-    ), displayFeatures = displayFeatures, modifier = modifier.padding(
-        horizontal = when(showListAndDetail) {
-            true -> 24.dp
-            false -> 16.dp
-        }
-    )
-    )
+    BackHandler(enabled = selectedEmail != null) {
+        navigator.navigateBack()
+        onEmailSelect(null)
+    }
 }
 
 @Composable
@@ -234,15 +210,10 @@ private fun DetailContent(
     }
 }
 
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
 @Composable
 @DeviceSizePreviews
 fun EmailPanePreview() {
     AlexArchitectureTheme {
-        val configuration = LocalConfiguration.current
-        EmailPane(
-            WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)),
-            listOf(),
-            onEmailSelect = {})
+        EmailPane(onEmailSelect = {})
     }
 }
