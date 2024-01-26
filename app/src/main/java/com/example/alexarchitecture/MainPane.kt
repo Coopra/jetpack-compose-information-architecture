@@ -1,191 +1,178 @@
 package com.example.alexarchitecture
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.DrawerState
-import androidx.compose.material.DrawerValue
-import androidx.compose.material.Scaffold
-import androidx.compose.material.rememberDrawerState
-import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material3.DismissibleDrawerSheet
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigation.suite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
+import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffold
+import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigation.suite.NavigationSuiteType
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import com.example.alexarchitecture.apps.AppsNavigationLocation
-import com.example.alexarchitecture.calendar.CalendarNavigationLocation
-import com.example.alexarchitecture.email.EmailNavigationLocation
-import com.example.alexarchitecture.feed.FeedNavigationLocation
-import com.example.alexarchitecture.interfaces.NavigationLocation
-import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.alexarchitecture.contributions.ScreenContribution
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun MainPane(
-    windowSizeClass: WindowSizeClass,
-    navigationLocations: List<NavigationLocation>
-) {
-    assert(navigationLocations.isNotEmpty())
-    val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
+fun MainPane() {
+    var selectedItem by rememberSaveable { mutableIntStateOf(0) }
+    val mainViewModel: MainViewModel = viewModel()
+    val mainUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    val currentScreen = mainUiState.screenContributions[selectedItem]
 
-    when (widthSizeClass) {
-        WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> CompactPane(navigationLocations)
-        WindowWidthSizeClass.Expanded -> ExpandedPane(navigationLocations)
+    val navSuiteType = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
+    NavigationSuiteScaffold(navigationSuiteItems = {
+        mainUiState.screenContributions.forEachIndexed { index, navItem ->
+            item(
+                icon = {
+                    Icon(painter = painterResource(id = navItem.icon), contentDescription = navItem.title)
+                },
+                label = {
+                    Text(text = navItem.title)
+                },
+                selected = selectedItem == index,
+                onClick = {
+                    selectedItem = index
+                }
+            )
+        }
+    }) {
+        // Screen content
+        val drawerState: DrawerState = currentScreen.drawerContribution?.drawerState() ?: rememberDrawerState(DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
+
+        BackHandler(enabled = drawerState.isOpen) {
+            scope.launch {
+                drawerState.close()
+            }
+        }
+
+        if (navSuiteType != NavigationSuiteType.NavigationRail) {
+            ModalNavigationDrawer(
+                drawerContent = {
+                    if (navSuiteType != NavigationSuiteType.NavigationRail) {
+                        currentScreen.drawerContribution?.let { drawerContribution ->
+                            ModalDrawerSheet {
+                                Spacer(Modifier.height(12.dp))
+                                drawerContribution.Content()
+                            }
+                        }
+                    }
+                }, drawerState = drawerState
+            ) {
+                MainPaneContent(currentScreen = currentScreen, drawerState = drawerState)
+            }
+        } else {
+            MyDismissibleNavigationDrawer(drawerContent = {
+                DismissibleDrawerSheet {
+                    currentScreen.drawerContribution?.let { drawerContribution ->
+                        Spacer(Modifier.height(12.dp))
+                        drawerContribution.Content()
+                    }
+                }
+            },
+                drawerState = drawerState) {
+                MainPaneContent(currentScreen = currentScreen, drawerState = drawerState)
+            }
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CompactPane(navigationLocations: List<NavigationLocation>) {
-    var navigationLocationIndex by rememberSaveable {
-        mutableIntStateOf(0)
-    }
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-    BackHandler(enabled = drawerState.isOpen) {
-        scope.launch {
-            drawerState.close()
-        }
-    }
-
-    Scaffold(bottomBar = {
-        NavigationBar {
-            navigationLocations.forEachIndexed { index, navigationLocation ->
-                NavigationBarItem(selected = navigationLocationIndex == index, onClick = { navigationLocationIndex = index }, icon = {
-                    Icon(painter = painterResource(id = navigationLocation.icon), contentDescription = navigationLocation.title)
-                })
-            }
-        }
-    }, floatingActionButton = {
-        FloatingActionButton(onClick = { /*TODO*/ }) {
-            Icon(painter = painterResource(id = R.drawable.outline_edit_24), contentDescription = "Compose")
-        }
-    }, topBar = {
-        TopAppBar(title = { Text(text = navigationLocations[navigationLocationIndex].toolbarTitle) }, navigationIcon = {
-            if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
-                IconButton(onClick = {
-                    scope.launch {
-                        drawerState.open()
+private fun MainPaneContent(
+    currentScreen: ScreenContribution,
+    drawerState: DrawerState
+) {
+    Scaffold(
+        floatingActionButton = {
+            currentScreen.fabContribution?.let { fabContribution ->
+                FloatingActionButton(onClick = { /*TODO*/ }) {
+                    AnimatedContent(targetState = fabContribution.icon) { targetState ->
+                        Icon(painter = painterResource(id = targetState), contentDescription = fabContribution.description)
                     }
-                }) {
-                    Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
                 }
             }
-        })
-    }, drawerContent = {
-        if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
-            ModalDrawerSheet(modifier = Modifier.fillMaxWidth()) {
-                Spacer(Modifier.height(12.dp))
-                navigationLocations[navigationLocationIndex].DrawerContent(
-                    modifier = Modifier,
-                    onDrawerItemClick = {
+        },
+        topBar = {
+            TopAppBar(title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) }, navigationIcon = {
+                if (currentScreen.drawerContribution != null) {
+                    val scope = rememberCoroutineScope()
+                    IconButton(onClick = {
                         scope.launch {
-                            drawerState.close()
+                            if (drawerState.isClosed) {
+                                drawerState.open()
+                            } else {
+                                drawerState.close()
+                            }
                         }
-                    },
-                )
-            }
-        }
-    }, scaffoldState = rememberScaffoldState(drawerState = drawerState)) { padding ->
-        navigationLocations[navigationLocationIndex].Content(modifier = Modifier.padding(padding))
-    }
-}
-
-@Composable
-private fun ExpandedPane(navigationLocations: List<NavigationLocation>) {
-    var navigationLocationIndex by rememberSaveable {
-        mutableIntStateOf(0)
-    }
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    Row {
-        NavigationRail {
-            AnimatedVisibility(visible = navigationLocations[navigationLocationIndex].hasDrawerContent) {
-                IconButton(onClick = {
-                    when (drawerState.currentValue) {
-                        DrawerValue.Open -> scope.launch { drawerState.close() }
-                        DrawerValue.Closed -> scope.launch { drawerState.open() }
+                    }) {
+                        Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
                     }
-                }) {
-                    Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
                 }
-            }
-
-            FloatingActionButton(onClick = { /*TODO*/ }) {
-                Icon(painter = painterResource(id = R.drawable.outline_edit_24), contentDescription = "Compose")
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            navigationLocations.forEachIndexed { index, navigationLocation ->
-                NavigationRailItem(selected = navigationLocationIndex == index,
-                    onClick = { navigationLocationIndex = index },
-                    icon = { Icon(painter = painterResource(id = navigationLocation.icon), contentDescription = navigationLocation.title) })
-            }
-        }
-
-        if (navigationLocations[navigationLocationIndex].hasDrawerContent) {
-            MyDismissibleNavigationDrawer(drawerContent = {
-                DismissibleDrawerSheet {
-                    Spacer(Modifier.height(12.dp))
-                    navigationLocations[navigationLocationIndex].DrawerContent(
-                        modifier = Modifier
-                    )
+            }, actions = {
+                currentScreen.toolbarContribution?.let { toolbarContribution ->
+                    if (toolbarContribution.actions.isNotEmpty()) {
+                        toolbarContribution.actions.forEach { toolbarAction ->
+                            IconButton(onClick = toolbarAction.onClick) {
+                                Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+                            }
+                        }
+                    }
                 }
-            }, drawerState = drawerState) {
-                navigationLocations[navigationLocationIndex].Content(modifier = Modifier)
-            }
-        } else {
-            navigationLocations[navigationLocationIndex].Content(modifier = Modifier)
+            })
+        }) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            currentScreen.content.invoke()
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
-@DeviceSizePreviews
-@Composable
-fun MainPanePreview() {
-    AlexArchitectureTheme {
-        val configuration = LocalConfiguration.current
-        MainPane(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf(
-            EmailNavigationLocation(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf()),
-            CalendarNavigationLocation(),
-            FeedNavigationLocation(),
-            AppsNavigationLocation()
-        ))
-    }
-}
+// @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+// @DeviceSizePreviews
+// @Composable
+// fun MainPanePreview() {
+//     AlexArchitectureTheme {
+//         val configuration = LocalConfiguration.current
+//         MainPane(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf(
+//             EmailNavigationLocation(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf()),
+//             CalendarNavigationLocation(),
+//             FeedNavigationLocation(),
+//             AppsNavigationLocation()
+//         ))
+//     }
+// }
 
 @Preview(name = "Phone", showSystemUi = true, device = "spec:width=411dp,height=891dp")
 @Preview(name = "Foldable", showSystemUi = true, device = "spec:width=673dp,height=841dp")
