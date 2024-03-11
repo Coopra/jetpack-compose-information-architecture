@@ -31,6 +31,7 @@ import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -82,17 +83,15 @@ fun EmailDrawer(
     selectedFolder: EmailFolder?,
     onFolderSelected: (EmailFolder) -> Unit
 ) {
-    // toolbarTitle = uiState.selectedFolder?.title ?: ""
-
     emailFolders.forEach { emailFolder ->
         NavigationDrawerItem(label = { Text(text = emailFolder.title) },
             selected = emailFolder.id == selectedFolder?.id,
             onClick = {
                 onFolderSelected(emailFolder)
-                // toolbarTitle = uiState.selectedFolder?.title ?: ""
             },
             icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding),
+            colors = NavigationDrawerItemDefaults.colors(selectedContainerColor = Color.Transparent, unselectedContainerColor = Color.Transparent)
         )
     }
 }
