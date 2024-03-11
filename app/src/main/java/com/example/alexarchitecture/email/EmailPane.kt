@@ -24,9 +24,10 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.ListDetailPaneScaffold
-import androidx.compose.material3.adaptive.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -45,28 +46,33 @@ fun EmailPane(
     selectedEmail: Email? = null,
     folderEmails: List<Email> = emptyList()
 ) {
-    val navigator = rememberListDetailPaneScaffoldNavigator()
-    ListDetailPaneScaffold(
-        listPane = {
-            ListContent(
-                emails = folderEmails, selectedEmail = selectedEmail,
-                onEmailClick = { email ->
-                    onEmailSelect(email)
-                    navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
-                }
-            )
-        },
-        modifier = modifier,
-        scaffoldState = navigator.scaffoldState
-    ) {
-        DetailContent(
-            selectedEmail = selectedEmail
-        )
-    }
-
-    BackHandler(enabled = selectedEmail != null) {
+    val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
+    BackHandler(navigator.canNavigateBack()) {
         navigator.navigateBack()
         onEmailSelect(null)
+    }
+
+    ListDetailPaneScaffold(
+        directive = navigator.scaffoldDirective,
+        value = navigator.scaffoldValue,
+        listPane = {
+            AnimatedPane(modifier = Modifier) {
+                ListContent(
+                    emails = folderEmails, selectedEmail = selectedEmail,
+                    onEmailClick = { email ->
+                        onEmailSelect(email)
+                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                    }
+                )
+            }
+        },
+        modifier = modifier,
+    ) {
+        AnimatedPane(modifier = Modifier) {
+            DetailContent(
+                selectedEmail = selectedEmail
+            )
+        }
     }
 }
 
