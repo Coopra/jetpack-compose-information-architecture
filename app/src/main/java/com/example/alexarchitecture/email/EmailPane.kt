@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,15 +97,17 @@ fun EmailDrawer(
 ) {
     emailFolders.forEach { emailFolder ->
         val isSelected = emailFolder.id == selectedFolder?.id
+
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(NavigationDrawerItemDefaults.ItemPadding)
                 .clickable { onFolderSelected(emailFolder) },
             shape = RoundedCornerShape(3.dp),
-            color = when (isSelected) {
-                true -> Color.Black.copy(alpha = 0.0373f)
-                false -> Color.Transparent
+            color = when {
+                isSelected && isSystemInDarkTheme() -> Color.White.copy(alpha = 0.0605f)
+                isSelected -> Color.Black.copy(alpha = 0.0373f)
+                else -> Color.Transparent
 
             }
         ) {
