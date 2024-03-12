@@ -92,12 +92,7 @@ fun MainPane() {
                     if (navSuiteType != NavigationSuiteType.NavigationRail) {
                         currentScreen.drawerContribution?.let { drawerContribution ->
                             ModalDrawerSheet(
-                                modifier = Modifier.hazeChild(
-                                    state = hazeState,
-                                    style = HazeStyle(
-                                        blurRadius = 18.dp
-                                    )
-                                ),
+                                modifier = Modifier.hazeChild(state = hazeState),
                                 drawerContainerColor = Color.Transparent
                             ) {
                                 Spacer(Modifier.height(12.dp))
