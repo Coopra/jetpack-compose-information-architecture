@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DismissibleDrawerSheet
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -44,7 +45,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alexarchitecture.contributions.ScreenContribution
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.launch
@@ -92,7 +92,10 @@ fun MainPane() {
                     if (navSuiteType != NavigationSuiteType.NavigationRail) {
                         currentScreen.drawerContribution?.let { drawerContribution ->
                             ModalDrawerSheet(
-                                modifier = Modifier.hazeChild(state = hazeState),
+                                modifier = Modifier.hazeChild(
+                                    state = hazeState,
+                                    shape = RoundedCornerShape(topStart = 0.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 0.dp)
+                                ),
                                 drawerContainerColor = Color.Transparent
                             ) {
                                 Spacer(Modifier.height(12.dp))
