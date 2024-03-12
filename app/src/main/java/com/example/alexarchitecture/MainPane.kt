@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alexarchitecture.contributions.ScreenContribution
+import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
@@ -181,20 +182,13 @@ private fun MainPaneContent(
     }
 }
 
-// @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
-// @DeviceSizePreviews
-// @Composable
-// fun MainPanePreview() {
-//     AlexArchitectureTheme {
-//         val configuration = LocalConfiguration.current
-//         MainPane(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf(
-//             EmailNavigationLocation(WindowSizeClass.calculateFromSize(DpSize(configuration.screenWidthDp.dp, configuration.screenHeightDp.dp)), listOf()),
-//             CalendarNavigationLocation(),
-//             FeedNavigationLocation(),
-//             AppsNavigationLocation()
-//         ))
-//     }
-// }
+@DeviceSizePreviews
+@Composable
+fun MainPanePreview() {
+    AlexArchitectureTheme {
+        MainPane()
+    }
+}
 
 @Preview(name = "Phone", showSystemUi = true, device = "spec:width=411dp,height=891dp")
 @Preview(name = "Foldable", showSystemUi = true, device = "spec:width=673dp,height=841dp")
