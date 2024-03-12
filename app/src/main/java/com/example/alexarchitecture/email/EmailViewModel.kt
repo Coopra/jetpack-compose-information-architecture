@@ -48,11 +48,13 @@ class EmailViewModel : ViewModel() {
     private fun fetchEmailsForFolder(id: Int): List<Email> {
         return when (id) {
             INBOX_ID -> {
-                listOf(
-                    Email("John Doe", "Hello", "Hello, how are you?"),
-                    Email("Jane Doe", "Re: Hello", "I'm good, thanks!"),
-                    Email("John Doe", "Re: Re: Hello", "That's good to hear!")
-                )
+                List(20) { index ->
+                    Email(
+                        sender = "Sender$index",
+                        subject = "Subject $index",
+                        body = "This is the body of email $index."
+                    )
+                }
             }
 
             else -> emptyList()
