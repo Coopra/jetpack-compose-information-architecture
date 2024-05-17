@@ -2,6 +2,7 @@ package com.example.alexarchitecture.email
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -38,9 +39,11 @@ import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -77,14 +80,15 @@ fun EmailPane(
                 )
             }
         },
+        detailPane = {
+            AnimatedPane(modifier = Modifier) {
+                DetailContent(
+                    selectedEmail = selectedEmail
+                )
+            }
+        },
         modifier = modifier,
-    ) {
-        AnimatedPane(modifier = Modifier) {
-            DetailContent(
-                selectedEmail = selectedEmail
-            )
-        }
-    }
+    )
 }
 
 @Composable
@@ -152,7 +156,7 @@ private fun ListContent(
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(vertical = 16.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .then(
@@ -163,21 +167,15 @@ private fun ListContent(
             )
     ) {
         items(emails) { email ->
-            val interactionSource = remember { MutableInteractionSource() }
-
             val interactionModifier = when (selectedEmail) {
                 null -> {
                     Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = rememberRipple(),
                         onClick = { onEmailClick(email) }
                     )
                 }
                 else -> {
                     Modifier.selectable(
                         selected = email == selectedEmail,
-                        interactionSource = interactionSource,
-                        indication = rememberRipple(),
                         onClick = { onEmailClick(email) }
                     )
                 }
@@ -209,8 +207,9 @@ private fun ListContent(
                 colors = CardDefaults.cardColors(containerColor = containerColor),
                 border = borderStroke,
                 modifier = Modifier
-                    .then(interactionModifier)
                     .fillMaxWidth()
+                    .clip(CardDefaults.shape)
+                    .then(interactionModifier)
             ) {
                 Text(
                     text = email.subject,

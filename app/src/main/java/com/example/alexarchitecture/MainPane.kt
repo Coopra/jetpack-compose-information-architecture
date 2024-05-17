@@ -50,7 +50,6 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3AdaptiveNavigationSuiteApi::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun MainPane() {
     var selectedItem by rememberSaveable { mutableIntStateOf(0) }
@@ -175,7 +174,8 @@ private fun MainPaneContent(
                     }
                 }
             })
-        }) { padding ->
+        }
+    ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             currentScreen.content.invoke()
         }
