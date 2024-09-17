@@ -3,6 +3,12 @@ package com.example.alexarchitecture
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,27 +23,37 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigationsuite.ExperimentalMaterial3AdaptiveNavigationSuiteApi
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,6 +61,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alexarchitecture.contributions.ScreenContribution
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
+import com.example.alexarchitecture.ui.theme.RainbowDarkBlue
+import com.example.alexarchitecture.ui.theme.RainbowGreen
+import com.example.alexarchitecture.ui.theme.RainbowLightBlue
+import com.example.alexarchitecture.ui.theme.RainbowOrange
+import com.example.alexarchitecture.ui.theme.RainbowPurple
+import com.example.alexarchitecture.ui.theme.RainbowRed
+import com.example.alexarchitecture.ui.theme.RainbowYellow
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
@@ -148,32 +171,99 @@ private fun MainPaneContent(
             }
         },
         topBar = {
-            TopAppBar(title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) }, navigationIcon = {
-                if (currentScreen.drawerContribution != null) {
-                    val scope = rememberCoroutineScope()
-                    IconButton(onClick = {
-                        scope.launch {
-                            if (drawerState.isClosed) {
-                                drawerState.open()
-                            } else {
-                                drawerState.close()
-                            }
-                        }
-                    }) {
-                        Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
+            val infiniteTransition = rememberInfiniteTransition()
+
+            val offset by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 10000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                )
+            )
+
+            val brush = remember(offset) {
+                object : ShaderBrush() {
+                    override fun createShader(size: Size): Shader {
+                        val widthOffset = size.width * offset
+                        val heightOffset = size.height * offset
+                        return LinearGradientShader(
+                            colors = listOf(RainbowRed, RainbowPurple, RainbowDarkBlue, RainbowLightBlue, RainbowGreen, RainbowYellow, RainbowOrange, RainbowRed),
+                            from = Offset(widthOffset, heightOffset),
+                            to = Offset(widthOffset + size.width, heightOffset + size.height),
+                            tileMode = TileMode.Repeated
+                        )
                     }
                 }
-            }, actions = {
-                currentScreen.toolbarContribution?.let { toolbarContribution ->
-                    if (toolbarContribution.actions.isNotEmpty()) {
-                        toolbarContribution.actions.forEach { toolbarAction ->
-                            IconButton(onClick = toolbarAction.onClick) {
-                                Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+            }
+
+            var toolbarWidth by remember { mutableIntStateOf(0) }
+            var gradientBottom by remember { mutableFloatStateOf(1f) }
+            val topBound by remember {
+                mutableFloatStateOf(3 * (gradientBottom / 4))
+            }
+            val surfaceColor = MaterialTheme.colorScheme.surface
+
+            TopAppBar(
+                title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) },
+                modifier = Modifier
+                    .drawWithCache {
+                        onDrawBehind {
+                            // Draw rainbow gradient
+                            drawRect(brush = brush)
+
+                            // Draw opacity mask #1 (radial) - 60% opacity in center (80% in dark mode) to 0% opacity at edge
+                            drawRect(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(Color(0x66FFFFFF), Color(0x00FFFFFF)),
+                                    center = Offset(toolbarWidth / 2f, gradientBottom / 2f),
+                                    radius = gradientBottom
+                                )
+                            )
+
+                            // Draw opacity mask #2 (linear) on bottom (toolbar) area - 100% to 0% opacity
+                            drawRect(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(Color.Transparent, surfaceColor),
+                                    start = Offset(0f, topBound),
+                                    end = Offset(0f, topBound + 92.dp.toPx())
+                                )
+                            )
+                        }
+                    }
+                    .onGloballyPositioned {
+                        toolbarWidth = it.size.width
+                        gradientBottom = toolbarWidth * 1.15f
+                    },
+                navigationIcon = {
+                    if (currentScreen.drawerContribution != null) {
+                        val scope = rememberCoroutineScope()
+                        IconButton(onClick = {
+                            scope.launch {
+                                if (drawerState.isClosed) {
+                                    drawerState.open()
+                                } else {
+                                    drawerState.close()
+                                }
+                            }
+                        }) {
+                            Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
+                        }
+                    }
+                },
+                actions = {
+                    currentScreen.toolbarContribution?.let { toolbarContribution ->
+                        if (toolbarContribution.actions.isNotEmpty()) {
+                            toolbarContribution.actions.forEach { toolbarAction ->
+                                IconButton(onClick = toolbarAction.onClick) {
+                                    Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+                                }
                             }
                         }
                     }
-                }
-            })
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
