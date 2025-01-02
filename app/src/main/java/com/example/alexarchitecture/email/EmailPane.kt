@@ -2,7 +2,6 @@ package com.example.alexarchitecture.email
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,22 +25,24 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.rememberPaneExpansionState
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
-import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import com.example.alexarchitecture.DeviceSizePreviews
 import com.example.alexarchitecture.R
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -61,33 +63,51 @@ fun EmailPane(
     folderEmails: List<Email> = emptyList()
 ) {
     val navigator = rememberListDetailPaneScaffoldNavigator<Nothing>()
+    val scope = rememberCoroutineScope()
     BackHandler(navigator.canNavigateBack()) {
-        navigator.navigateBack()
-        onEmailSelect(null)
+        scope.launch {
+            navigator.navigateBack()
+            onEmailSelect(null)
+        }
     }
 
     ListDetailPaneScaffold(
         directive = navigator.scaffoldDirective,
         value = navigator.scaffoldValue,
         listPane = {
-            AnimatedPane(modifier = Modifier) {
+            AnimatedPane(modifier = Modifier.preferredWidth(300.dp)) {
                 ListContent(
                     emails = folderEmails, selectedEmail = selectedEmail,
                     onEmailClick = { email ->
-                        onEmailSelect(email)
-                        navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                        scope.launch {
+                            onEmailSelect(email)
+                            navigator.navigateTo(ListDetailPaneScaffoldRole.Detail)
+                        }
                     }
                 )
             }
         },
         detailPane = {
-            AnimatedPane(modifier = Modifier) {
+            AnimatedPane {
                 DetailContent(
                     selectedEmail = selectedEmail
                 )
             }
         },
         modifier = modifier,
+        paneExpansionState = rememberPaneExpansionState(
+            keyProvider = navigator.scaffoldValue
+        ),
+        paneExpansionDragHandle = { state ->
+            val interactionSource = remember { MutableInteractionSource() }
+            VerticalDragHandle(
+                modifier = Modifier.paneExpansionDraggable(
+                    state,
+                    LocalMinimumInteractiveComponentSize.current,
+                    interactionSource
+                )
+            )
+        }
     )
 }
 
