@@ -75,7 +75,7 @@ fun EmailPane(
         directive = navigator.scaffoldDirective,
         value = navigator.scaffoldValue,
         listPane = {
-            AnimatedPane(modifier = Modifier.preferredWidth(300.dp)) {
+            AnimatedPane {
                 ListContent(
                     emails = folderEmails, selectedEmail = selectedEmail,
                     onEmailClick = { email ->
