@@ -65,7 +65,7 @@ fun MainPane() {
                 NavigationRail {
                     AnimatedVisibility(currentScreen.drawerContribution != null) {
                         val scope = rememberCoroutineScope()
-                        IconButton(onClick = {
+                        HamburgerButton {
                             scope.launch {
                                 if (drawerState.isClosed) {
                                     drawerState.open()
@@ -73,8 +73,6 @@ fun MainPane() {
                                     drawerState.close()
                                 }
                             }
-                        }) {
-                            Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
                         }
                     }
 
@@ -133,7 +131,7 @@ fun MainPane() {
                 scrimColor = Color.Transparent
             ) {
                 MainPaneContent(
-                    currentScreen = currentScreen, modifier = Modifier.haze(hazeState)
+                    currentScreen = currentScreen, drawerState = drawerState, navigationSuiteType = navSuiteType, modifier = Modifier.haze(hazeState)
                 )
             }
         } else {
@@ -146,7 +144,7 @@ fun MainPane() {
                 }
             },
                 drawerState = drawerState) {
-                MainPaneContent(currentScreen = currentScreen)
+                MainPaneContent(currentScreen = currentScreen, drawerState = drawerState, navigationSuiteType = navSuiteType)
             }
         }
     }
@@ -156,6 +154,8 @@ fun MainPane() {
 @Composable
 private fun MainPaneContent(
     currentScreen: ScreenContribution,
+    drawerState: DrawerState,
+    navigationSuiteType: NavigationSuiteType,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -172,6 +172,20 @@ private fun MainPaneContent(
         topBar = {
             TopAppBar(
                 title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) },
+                navigationIcon = {
+                    if (navigationSuiteType == NavigationSuiteType.NavigationBar) {
+                        val scope = rememberCoroutineScope()
+                        HamburgerButton {
+                            scope.launch {
+                                if (drawerState.isClosed) {
+                                    drawerState.open()
+                                } else {
+                                    drawerState.close()
+                                }
+                            }
+                        }
+                    }
+                },
                 actions = {
                     currentScreen.toolbarContribution?.let { toolbarContribution ->
                         if (toolbarContribution.actions.isNotEmpty()) {
@@ -189,6 +203,13 @@ private fun MainPaneContent(
         Box(modifier = Modifier.padding(padding)) {
             currentScreen.content.invoke()
         }
+    }
+}
+
+@Composable
+private fun HamburgerButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
     }
 }
 
