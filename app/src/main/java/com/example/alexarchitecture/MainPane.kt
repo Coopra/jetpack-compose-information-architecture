@@ -19,12 +19,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
@@ -56,24 +58,49 @@ fun MainPane() {
     val currentScreen = mainUiState.screenContributions[selectedItem]
 
     val navSuiteType = NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
-    NavigationSuiteScaffold(navigationSuiteItems = {
-        mainUiState.screenContributions.forEachIndexed { index, navItem ->
-            item(
-                icon = {
-                    Icon(painter = painterResource(id = navItem.icon), contentDescription = navItem.title)
-                },
-                label = {
-                    Text(text = navItem.title)
-                },
-                selected = selectedItem == index,
-                onClick = {
-                    selectedItem = index
+    val drawerState: DrawerState = currentScreen.drawerContribution?.drawerState() ?: rememberDrawerState(DrawerValue.Closed)
+    NavigationSuiteScaffoldLayout(
+        navigationSuite = {
+            if (navSuiteType == NavigationSuiteType.NavigationRail) {
+                NavigationRail {
+                    AnimatedVisibility(currentScreen.drawerContribution != null) {
+                        val scope = rememberCoroutineScope()
+                        IconButton(onClick = {
+                            scope.launch {
+                                if (drawerState.isClosed) {
+                                    drawerState.open()
+                                } else {
+                                    drawerState.close()
+                                }
+                            }
+                        }) {
+                            Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
+                        }
+                    }
+
+                    Spacer(Modifier.weight(1f))
+
+                    mainUiState.screenContributions.forEachIndexed { index, navItem ->
+                        NavigationRailItem(
+                            icon = {
+                                Icon(painter = painterResource(id = navItem.icon), contentDescription = navItem.title)
+                            },
+                            label = {
+                                Text(text = navItem.title)
+                            },
+                            selected = selectedItem == index,
+                            onClick = {
+                                selectedItem = index
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.weight(1f))
                 }
-            )
+            }
         }
-    }) {
+    ) {
         // Screen content
-        val drawerState: DrawerState = currentScreen.drawerContribution?.drawerState() ?: rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
 
         BackHandler(enabled = drawerState.isOpen) {
@@ -106,9 +133,7 @@ fun MainPane() {
                 scrimColor = Color.Transparent
             ) {
                 MainPaneContent(
-                    modifier = Modifier.haze(hazeState),
-                    currentScreen = currentScreen,
-                    drawerState = drawerState
+                    currentScreen = currentScreen, modifier = Modifier.haze(hazeState)
                 )
             }
         } else {
@@ -121,7 +146,7 @@ fun MainPane() {
                 }
             },
                 drawerState = drawerState) {
-                MainPaneContent(currentScreen = currentScreen, drawerState = drawerState)
+                MainPaneContent(currentScreen = currentScreen)
             }
         }
     }
@@ -131,7 +156,6 @@ fun MainPane() {
 @Composable
 private fun MainPaneContent(
     currentScreen: ScreenContribution,
-    drawerState: DrawerState,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -146,32 +170,20 @@ private fun MainPaneContent(
             }
         },
         topBar = {
-            TopAppBar(title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) }, navigationIcon = {
-                if (currentScreen.drawerContribution != null) {
-                    val scope = rememberCoroutineScope()
-                    IconButton(onClick = {
-                        scope.launch {
-                            if (drawerState.isClosed) {
-                                drawerState.open()
-                            } else {
-                                drawerState.close()
-                            }
-                        }
-                    }) {
-                        Icon(painter = painterResource(id = R.drawable.outline_menu_24), contentDescription = "Menu")
-                    }
-                }
-            }, actions = {
-                currentScreen.toolbarContribution?.let { toolbarContribution ->
-                    if (toolbarContribution.actions.isNotEmpty()) {
-                        toolbarContribution.actions.forEach { toolbarAction ->
-                            IconButton(onClick = toolbarAction.onClick) {
-                                Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+            TopAppBar(
+                title = { Text(text = currentScreen.toolbarContribution?.title?.collectAsStateWithLifecycle()?.value ?: currentScreen.title) },
+                actions = {
+                    currentScreen.toolbarContribution?.let { toolbarContribution ->
+                        if (toolbarContribution.actions.isNotEmpty()) {
+                            toolbarContribution.actions.forEach { toolbarAction ->
+                                IconButton(onClick = toolbarAction.onClick) {
+                                    Icon(painter = painterResource(id = toolbarAction.icon), contentDescription = toolbarAction.title)
+                                }
                             }
                         }
                     }
                 }
-            })
+            )
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
