@@ -25,6 +25,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuite
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -94,6 +95,23 @@ fun MainPane() {
                     }
 
                     Spacer(Modifier.weight(1f))
+                }
+            } else {
+                NavigationSuite {
+                    mainUiState.screenContributions.forEachIndexed { index, navItem ->
+                        item(
+                            icon = {
+                                Icon(painter = painterResource(id = navItem.icon), contentDescription = navItem.title)
+                            },
+                            label = {
+                                Text(text = navItem.title)
+                            },
+                            selected = selectedItem == index,
+                            onClick = {
+                                selectedItem = index
+                            }
+                        )
+                    }
                 }
             }
         }
