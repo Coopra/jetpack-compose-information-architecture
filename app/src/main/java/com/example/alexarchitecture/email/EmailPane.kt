@@ -30,6 +30,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -118,42 +119,15 @@ fun EmailDrawer(
     onFolderSelected: (EmailFolder) -> Unit
 ) {
     emailFolders.forEach { emailFolder ->
-        val isSelected = emailFolder.id == selectedFolder?.id
-
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(NavigationDrawerItemDefaults.ItemPadding)
-                .clickable { onFolderSelected(emailFolder) },
-            shape = RoundedCornerShape(3.dp),
-            color = when {
-                isSelected && isSystemInDarkTheme() -> Color.White.copy(alpha = 0.0605f)
-                isSelected -> Color.Black.copy(alpha = 0.0373f)
-                else -> Color.Transparent
-
-            }
-        ) {
-            Row(modifier = Modifier
-                .height(IntrinsicSize.Min)
-                .padding(start = 0.dp, top = 12.dp, end = 16.dp, bottom = 12.dp)
-            ) {
-                if (isSelected) {
-                    Box(modifier = Modifier
-                        .width(4.dp)
-                        .fillMaxHeight()
-                        .background(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(99)))
-                    Spacer(modifier = Modifier.width(11.dp))
-                } else {
-                    Spacer(modifier = Modifier.width(16.dp))
-                }
-
-                Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null)
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(text = emailFolder.title)
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(4.dp))
+        NavigationDrawerItem(
+            label = { Text(text = emailFolder.title) },
+            selected = emailFolder.id == selectedFolder?.id,
+            onClick = {
+                onFolderSelected(emailFolder)
+            },
+            icon = { Icon(painter = painterResource(id = emailFolder.icon), contentDescription = null) },
+            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        )
     }
 }
 

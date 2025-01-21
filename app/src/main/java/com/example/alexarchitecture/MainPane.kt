@@ -46,9 +46,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alexarchitecture.contributions.ScreenContribution
 import com.example.alexarchitecture.ui.theme.AlexArchitectureTheme
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.launch
 
 @Composable
@@ -126,30 +123,21 @@ fun MainPane() {
         }
 
         if (navSuiteType != NavigationSuiteType.NavigationRail) {
-            val hazeState = remember { HazeState()}
-
             ModalNavigationDrawer(
                 drawerContent = {
                     if (navSuiteType != NavigationSuiteType.NavigationRail) {
                         currentScreen.drawerContribution?.let { drawerContribution ->
-                            ModalDrawerSheet(
-                                modifier = Modifier.hazeChild(
-                                    state = hazeState,
-                                    shape = RoundedCornerShape(topStart = 0.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 0.dp)
-                                ),
-                                drawerContainerColor = Color.Transparent
-                            ) {
+                            ModalDrawerSheet {
                                 Spacer(Modifier.height(12.dp))
                                 drawerContribution.Content()
                             }
                         }
                     }
                 },
-                drawerState = drawerState,
-                scrimColor = Color.Transparent
+                drawerState = drawerState
             ) {
                 MainPaneContent(
-                    currentScreen = currentScreen, drawerState = drawerState, navigationSuiteType = navSuiteType, modifier = Modifier.haze(hazeState)
+                    currentScreen = currentScreen, drawerState = drawerState, navigationSuiteType = navSuiteType
                 )
             }
         } else {
