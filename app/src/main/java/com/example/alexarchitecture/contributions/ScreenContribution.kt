@@ -1,10 +1,14 @@
 package com.example.alexarchitecture.contributions
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alexarchitecture.R
@@ -51,10 +55,20 @@ sealed class ScreenContribution(
     })
 
     object Feed : ScreenContribution("Feed", R.drawable.outline_dynamic_feed_24, {
-        Text(text = "Feed")
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Feed")
+        }
     })
 
     object Apps : ScreenContribution("Apps", R.drawable.outline_apps_24, {
-        Text(text = "Apps")
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Apps")
+        }
     })
 }
