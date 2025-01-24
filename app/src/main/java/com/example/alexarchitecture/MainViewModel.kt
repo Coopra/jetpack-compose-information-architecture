@@ -1,7 +1,6 @@
 package com.example.alexarchitecture
 
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavDestination
 import com.example.alexarchitecture.contributions.ScreenContribution
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,12 +18,6 @@ class MainViewModel: ViewModel() {
 
     init {
         fetchScreenContributions()
-    }
-
-    fun updateCurrentScreen(currentDestination: NavDestination) {
-        _uiState.update {
-            it.copy(currentScreen = _uiState.value.screenContributions.find { screenContribution -> screenContribution.route == currentDestination.route } ?: _uiState.value.screenContributions.first())
-        }
     }
 
     private fun fetchScreenContributions() {
