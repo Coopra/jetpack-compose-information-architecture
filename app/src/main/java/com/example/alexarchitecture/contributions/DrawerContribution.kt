@@ -19,6 +19,12 @@ sealed class DrawerContribution {
     @Composable
     abstract fun drawerState(): DrawerState
 
+    abstract suspend fun openDrawer()
+
+    abstract suspend fun closeDrawer()
+
+    abstract fun isDrawerOpen(): Boolean
+
     object Email : DrawerContribution() {
         private var drawerState: DrawerState? = null
 
@@ -43,6 +49,18 @@ sealed class DrawerContribution {
             }
 
             return drawerState!!
+        }
+
+        override suspend fun openDrawer() {
+            drawerState?.open()
+        }
+
+        override suspend fun closeDrawer() {
+            drawerState?.close()
+        }
+
+        override fun isDrawerOpen(): Boolean {
+            return drawerState?.isOpen ?: false
         }
     }
 }
