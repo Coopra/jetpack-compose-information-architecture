@@ -8,12 +8,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.alexarchitecture.R
+import com.example.alexarchitecture.calendar.CalendarPane
 import com.example.alexarchitecture.email.EmailPane
 import com.example.alexarchitecture.email.EmailViewModel
 import kotlinx.coroutines.launch
 
 sealed class ScreenContribution(
-    val route: String,
     val title: String,
     @DrawableRes
     val icon: Int,
@@ -21,7 +21,7 @@ sealed class ScreenContribution(
     val drawerContribution: DrawerContribution? = null
 ) {
     object Email : ScreenContribution(
-        route = "email", title = "Email", icon = R.drawable.outline_email_24, content = {
+        title = "Email", icon = R.drawable.outline_email_24, content = {
             val emailViewModel: EmailViewModel = viewModel()
             val emailUiState by emailViewModel.uiState.collectAsStateWithLifecycle()
             val scope = rememberCoroutineScope()
@@ -46,15 +46,15 @@ sealed class ScreenContribution(
         }, drawerContribution = DrawerContribution.Email
     )
 
-    object Calendar : ScreenContribution("calendar", "Calendar", R.drawable.outline_calendar_month_24, {
-        Text(text = "Calendar")
+    object Calendar : ScreenContribution("Calendar", R.drawable.outline_calendar_month_24, {
+        CalendarPane()
     })
 
-    object Feed : ScreenContribution("feed", "Feed", R.drawable.outline_dynamic_feed_24, {
+    object Feed : ScreenContribution("Feed", R.drawable.outline_dynamic_feed_24, {
         Text(text = "Feed")
     })
 
-    object Apps : ScreenContribution("apps", "Apps", R.drawable.outline_apps_24, {
+    object Apps : ScreenContribution("Apps", R.drawable.outline_apps_24, {
         Text(text = "Apps")
     })
 }
